@@ -7,9 +7,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="Contexts\" />
     <Folder Include="Migrations\" />
-    <Folder Include="Repositories\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MokaMetrics.DataAccess.Abstractions\MokaMetrics.DataAccess.Abstractions.csproj" />
   </ItemGroup>
 
 </Project>
