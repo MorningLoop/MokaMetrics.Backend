@@ -5,6 +5,10 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Identity.Abstractions;
 using Microsoft.Identity.Web;
 using Microsoft.Identity.Web.Resource;
+using MokaMetrics.DataAccess;
+using MokaMetrics.DataAccess.Abstractions;
+using MokaMetrics.DataAccess.Abstractions.Contexts;
+using MokaMetrics.DataAccess.Contexts;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,12 +20,10 @@ var builder = WebApplication.CreateBuilder(args);
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
+builder.Services.AddDbContext<IApplicationDbContext, ApplicationDbContext>(options =>
 {
     options.UseNpgsql(builder.Configuration.GetConnectionString("db"));
 });
-
-builder.Services.AddScoped<IApplicationDbContext, ApplicationDbContext>();
 
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
