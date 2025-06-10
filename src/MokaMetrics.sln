@@ -1,0 +1,52 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36119.2
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MokaMetrics.API", "MokaMetrics.API\MokaMetrics.API.csproj", "{D85400A3-C2B2-4FC9-99AA-CEAE28BBBAF5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MokaMetrics.DataAccess", "MokaMetrics.DataAccess\MokaMetrics.DataAccess.csproj", "{2CC3E280-ED73-4FA5-B5B9-A79333569D09}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MokaMetrics.DataAccess.Abstractions", "MokaMetrics.DataAccess.Abstractions\MokaMetrics.DataAccess.Abstractions.csproj", "{6B4C7FF8-89AE-4580-A44A-FACC183ACA16}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MokaMetrics.Models", "MokaMetrics.Models\MokaMetrics.Models.csproj", "{2DE5649C-2D54-4570-9A99-14CAAA27788C}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{8EC462FD-D22E-90A8-E5CE-7E832BA40C5D}"
+	ProjectSection(SolutionItems) = preProject
+		..\.dockerignore = ..\.dockerignore
+		..\.gitattributes = ..\.gitattributes
+		..\.gitignore = ..\.gitignore
+		..\LICENSE.txt = ..\LICENSE.txt
+		..\README.md = ..\README.md
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{D85400A3-C2B2-4FC9-99AA-CEAE28BBBAF5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D85400A3-C2B2-4FC9-99AA-CEAE28BBBAF5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D85400A3-C2B2-4FC9-99AA-CEAE28BBBAF5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D85400A3-C2B2-4FC9-99AA-CEAE28BBBAF5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2CC3E280-ED73-4FA5-B5B9-A79333569D09}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2CC3E280-ED73-4FA5-B5B9-A79333569D09}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2CC3E280-ED73-4FA5-B5B9-A79333569D09}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2CC3E280-ED73-4FA5-B5B9-A79333569D09}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6B4C7FF8-89AE-4580-A44A-FACC183ACA16}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6B4C7FF8-89AE-4580-A44A-FACC183ACA16}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6B4C7FF8-89AE-4580-A44A-FACC183ACA16}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6B4C7FF8-89AE-4580-A44A-FACC183ACA16}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2DE5649C-2D54-4570-9A99-14CAAA27788C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2DE5649C-2D54-4570-9A99-14CAAA27788C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2DE5649C-2D54-4570-9A99-14CAAA27788C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2DE5649C-2D54-4570-9A99-14CAAA27788C}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {1A8AD19A-A429-471D-9766-4A4CB07B84A1}
+	EndGlobalSection
+EndGlobal
