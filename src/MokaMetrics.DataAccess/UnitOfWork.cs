@@ -1,5 +1,7 @@
-﻿using MokaMetrics.DataAccess.Abstractions;
+﻿using Microsoft.Extensions.DependencyInjection;
+using MokaMetrics.DataAccess.Abstractions;
 using MokaMetrics.DataAccess.Abstractions.Contexts;
+using MokaMetrics.DataAccess.Abstractions.Repositories;
 
 namespace MokaMetrics.DataAccess;
 
@@ -13,13 +15,21 @@ public class UnitOfWork : IUnitOfWork
         _serviceProvider = serviceProvider;
     }
 
-    // add custom repositories interfaces using this format:
-    // private readonly IRepoName? _repoName;
-    // public IRepoName Name => _repoName ??= _serviceProvider.GetRequiredService<IRepoName>();
+    private ICustomerRepository? _customerRepository;
+    private IIndustrialFacilityRepository? _industrialFacilityRepository;
+    private ILotRepository? _lotRepository;
+    private IMachineActivityStatusRepository? _machineActivityStatusRepository;
+    private IMachineRepository? _machineRepository;
+    private IOrderRepository? _orderRepository;
+    public ICustomerRepository Customers => _customerRepository ??= _serviceProvider.GetRequiredService<ICustomerRepository>();
+    public IIndustrialFacilityRepository IndustrialFacilities => _industrialFacilityRepository ??= _serviceProvider.GetRequiredService<IIndustrialFacilityRepository>();
+    public ILotRepository Lots => _lotRepository ??= _serviceProvider.GetRequiredService<ILotRepository>();
+    public IMachineActivityStatusRepository MachineActivityStatuses => _machineActivityStatusRepository ??= _serviceProvider.GetRequiredService<IMachineActivityStatusRepository>();
+    public IMachineRepository Machines => _machineRepository ??= _serviceProvider.GetRequiredService<IMachineRepository>();
+    public IOrderRepository Orders => _orderRepository ??= _serviceProvider.GetRequiredService<IOrderRepository>();
 
-    public async Task<int> CommitAsync(CancellationToken cancellationToken = default)
+    public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
-        // Save changes in the context
         return await _context.SaveChangesAsync(cancellationToken);
     }
 }

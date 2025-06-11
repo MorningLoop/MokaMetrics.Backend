@@ -11,7 +11,7 @@ public interface IRepository<T> where T : Entity
     Task<List<T>> GetAllAsync(CancellationToken cancellationToken = default);
     Task<T?> SingleOrDefaultAsync(Expression<Func<T, bool>> expression, string includeProperties, CancellationToken cancellationToken = default);
     T Add(T entity);
-    void Update(T entity);
-    void UpdateRange(IEnumerable<T> entities);
+    abstract void Update(T entity);
+    abstract void UpdateRange(IEnumerable<T> entities);
     void Delete(T entity);
 }

@@ -27,21 +27,21 @@ public class Repository<T> : IRepository<T> where T : Entity
         return orderBy != null ? orderBy(query) : query;
     }
 
-    public Task<List<T>> GetListAsync(Expression<Func<T, bool>>? expression, Func<IQueryable<T>,
+    public async Task<List<T>> GetListAsync(Expression<Func<T, bool>>? expression, Func<IQueryable<T>,
         IOrderedQueryable<T>>? orderBy = null, CancellationToken cancellationToken = default)
     {
         var query = expression != null ? _context.Set<T>().Where(expression) : _context.Set<T>();
         return orderBy != null
-            ? orderBy(query).ToListAsync(cancellationToken)
-            : query.ToListAsync(cancellationToken);
+            ? await orderBy(query).ToListAsync(cancellationToken)
+            : await query.ToListAsync(cancellationToken);
     }
 
-    public Task<List<T>> GetAllAsync(CancellationToken cancellationToken)
+    public async Task<List<T>> GetAllAsync(CancellationToken cancellationToken)
     {
-        return _context.Set<T>().ToListAsync(cancellationToken);
+        return await _context.Set<T>().ToListAsync(cancellationToken);
     }
 
-    public Task<T?> SingleOrDefaultAsync(Expression<Func<T, bool>> expression, string includeProperties, CancellationToken cancellationToken = default)
+    public async Task<T?> SingleOrDefaultAsync(Expression<Func<T, bool>> expression, string includeProperties, CancellationToken cancellationToken = default)
     {
         var query = _context.Set<T>().AsQueryable();
 
@@ -49,7 +49,7 @@ public class Repository<T> : IRepository<T> where T : Entity
             StringSplitOptions.RemoveEmptyEntries).Aggregate(query, (current, includeProperty)
             => current.Include(includeProperty));
 
-        return query.SingleOrDefaultAsync(expression);
+        return await query.SingleOrDefaultAsync(expression);
     }
 
     public T Add(T entity)
@@ -57,12 +57,12 @@ public class Repository<T> : IRepository<T> where T : Entity
         return _context.Set<T>().Add(entity).Entity;
     }
 
-    public void Update(T entity)
+    public virtual void Update(T entity)
     {
         _context.Entry(entity).State = EntityState.Modified;
     }
 
-    public void UpdateRange(IEnumerable<T> entities)
+    public virtual void UpdateRange(IEnumerable<T> entities)
     {
         _context.Set<T>().UpdateRange(entities);
     }
