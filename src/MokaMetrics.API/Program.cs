@@ -22,7 +22,7 @@ builder.Services.AddOpenApi();
 
 builder.Services.AddDbContext<IApplicationDbContext, ApplicationDbContext>(options =>
 {
-    options.UseNpgsql(builder.Configuration.GetConnectionString("db"));
+    options.UseNpgsql(builder.Configuration.GetConnectionString("postgres"));
 });
 
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
