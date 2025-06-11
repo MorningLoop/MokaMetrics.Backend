@@ -2,7 +2,7 @@
 
 namespace MokaMetrics.Models;
 
-public record Entity
+public class Entity
 {
     [Key]
     public int Id { get; set; }
