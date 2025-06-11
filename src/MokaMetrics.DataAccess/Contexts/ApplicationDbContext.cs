@@ -41,16 +41,16 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
                 .HasForeignKey(x => x.CustomerId);
 
             e.Property(p => p.Name)
-                .HasColumnType("varchar(255)")
+                .HasColumnType("varchar").HasMaxLength(255)
                 .IsRequired();
 
-            e.Property(p => p.Email).HasColumnType("varchar(255)").IsRequired();
-            e.Property(p => p.Address).HasColumnType("varchar(255)").IsRequired(false);
-            e.Property(p => p.Country).HasColumnType("varchar(255)").IsRequired(false);
-            e.Property(p => p.ZipCode).HasColumnType("varchar(20)").IsRequired(false);
-            e.Property(p => p.City).HasColumnType("varchar(255)").IsRequired(false);
-            e.Property(p => p.Phone).HasColumnType("varchar(20)").IsRequired(false);
-            e.Property(p => p.FiscalId).HasColumnType("varchar(50)").IsRequired();
+            e.Property(p => p.Email).HasColumnType("varchar").HasMaxLength(255).IsRequired();
+            e.Property(p => p.Address).HasColumnType("varchar").HasMaxLength(255).IsRequired(false);
+            e.Property(p => p.Country).HasColumnType("varchar").HasMaxLength(255).IsRequired(false);
+            e.Property(p => p.ZipCode).HasColumnType("varchar").HasMaxLength(20).IsRequired(false);
+            e.Property(p => p.City).HasColumnType("varchar").HasMaxLength(255).IsRequired(false);
+            e.Property(p => p.Phone).HasColumnType("varchar").HasMaxLength(20).IsRequired(false);
+            e.Property(p => p.FiscalId).HasColumnType("varchar").HasMaxLength(50).IsRequired();
         });
 
         modelBuilder.Entity<Order>(e =>
@@ -91,12 +91,12 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
                 .WithOne(x => x.IndustrialFacility)
                 .HasForeignKey(x => x.IndustrialFacilityId);
 
-            e.Property(p => p.Name).HasColumnType("varchar(255)").IsRequired();
-            e.Property(p => p.Address).HasColumnType("varchar(255)").IsRequired(false);
-            e.Property(p => p.Country).HasColumnType("varchar(255)").IsRequired(false);
-            e.Property(p => p.ZipCode).HasColumnType("varchar(20)").IsRequired(false);
-            e.Property(p => p.City).HasColumnType("varchar(255)").IsRequired(false);
-            e.Property(p => p.Phone).HasColumnType("varchar(20)").IsRequired(false);
+            e.Property(p => p.Name).HasColumnType("varchar").HasMaxLength(255).IsRequired();
+            e.Property(p => p.Address).HasColumnType("varchar").HasMaxLength(255).IsRequired(false);
+            e.Property(p => p.Country).HasColumnType("varchar").HasMaxLength(255).IsRequired(false);
+            e.Property(p => p.ZipCode).HasColumnType("varchar").HasMaxLength(20).IsRequired(false);
+            e.Property(p => p.City).HasColumnType("varchar").HasMaxLength(255).IsRequired(false);
+            e.Property(p => p.Phone).HasColumnType("varchar").HasMaxLength(20).IsRequired(false);
         });
 
         modelBuilder.Entity<Machine>(e =>
@@ -105,7 +105,7 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
                 .WithMany()
                 .HasForeignKey(x => x.IndustrialFacilityId);
 
-            e.Property(p => p.Model).HasColumnType("varchar(255)").IsRequired();
+            e.Property(p => p.Model).HasColumnType("varchar").HasMaxLength(255).IsRequired();
             e.Property(p => p.Status).IsRequired();
         });
 
@@ -117,7 +117,7 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
 
             e.Property(p => p.Date).HasColumnType("timestamp").IsRequired();
             e.Property(p => p.Status).IsRequired();
-            e.Property(p => p.ErrorMessage).HasColumnType("varchar(max)").IsRequired(false);
+            e.Property(p => p.ErrorMessage).HasColumnType("varchar").HasMaxLength(255).IsRequired(false);
         });
     }
 }
