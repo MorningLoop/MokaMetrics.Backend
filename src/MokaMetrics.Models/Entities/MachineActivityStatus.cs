@@ -2,7 +2,7 @@
 
 namespace MokaMetrics.Models.Entities;
 
-public class MachineActivityStatus
+public class MachineActivityStatus : Entity
 {
     public int MachineId { get; set; }
     public DateTime Date { get; set; } = DateTime.UtcNow;

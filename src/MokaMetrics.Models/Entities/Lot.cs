@@ -1,6 +1,6 @@
 ﻿namespace MokaMetrics.Models.Entities;
 
-public class Lot
+public class Lot : Entity
 {
     public int OrderId { get; set; }
     public int TotalQuantity { get; set; }
