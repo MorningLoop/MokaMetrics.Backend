@@ -1,12 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using MokaMetrics.DataAccess.Abstractions.Repositories;
+using MokaMetrics.DataAccess.Contexts;
+using MokaMetrics.Models.Entities;
 
-namespace MokaMetrics.DataAccess.Repositories
+namespace MokaMetrics.DataAccess.Repositories;
+
+public class LotRepository : Repository<Lot>, ILotRepository
 {
-    internal class LotRepository
+    private readonly ApplicationDbContext _context;
+    public LotRepository(ApplicationDbContext context) : base(context)
     {
+        _context = context;
     }
 }

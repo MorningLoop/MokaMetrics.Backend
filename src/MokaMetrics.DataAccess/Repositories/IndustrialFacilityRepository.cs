@@ -1,12 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using MokaMetrics.DataAccess.Abstractions.Repositories;
+using MokaMetrics.DataAccess.Contexts;
+using MokaMetrics.Models.Entities;
 
-namespace MokaMetrics.DataAccess.Repositories
+namespace MokaMetrics.DataAccess.Repositories;
+
+public class IndustrialFacilityRepository : Repository<IndustrialFacility>, IIndustrialFacilityRepository
 {
-    internal class IndustrialFacilityRepository
+    private readonly ApplicationDbContext _context;
+    public IndustrialFacilityRepository(ApplicationDbContext context) : base(context)
     {
+        _context = context;
     }
 }
