@@ -7,7 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="DTO\" />
+    <PackageReference Include="Riok.Mapperly" Version="4.2.1" />
   </ItemGroup>
 
 </Project>
