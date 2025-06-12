@@ -1,6 +1,6 @@
-@MokaMetrics.API_HostAddress = http://localhost:5129
+@MokaMetrics.API_HostAddress = http://localhost:8080
 
-GET {{MokaMetrics.API_HostAddress}}/weatherforecast/
+GET {{MokaMetrics.API_HostAddress}}/api/orders
 Accept: application/json
 
 ###

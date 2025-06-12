@@ -1,6 +1,6 @@
 ﻿namespace MokaMetrics.Models.Entities;
 
-public class Machine
+public class Machine : Entity
 {
     public string Model { get; set; }
     public int Status { get; set; }

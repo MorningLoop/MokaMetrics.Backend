@@ -5,10 +5,13 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Identity.Abstractions;
 using Microsoft.Identity.Web;
 using Microsoft.Identity.Web.Resource;
+using MokaMetrics.API.Endpoints;
 using MokaMetrics.DataAccess;
 using MokaMetrics.DataAccess.Abstractions;
 using MokaMetrics.DataAccess.Abstractions.Contexts;
+using MokaMetrics.DataAccess.Abstractions.Repositories;
 using MokaMetrics.DataAccess.Contexts;
+using MokaMetrics.DataAccess.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -22,10 +25,16 @@ builder.Services.AddOpenApi();
 
 builder.Services.AddDbContext<IApplicationDbContext, ApplicationDbContext>(options =>
 {
-    options.UseNpgsql(builder.Configuration.GetConnectionString("db"));
+    options.UseNpgsql(builder.Configuration.GetConnectionString("postgres"));
 });
 
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+builder.Services.AddScoped<ICustomerRepository, CustomerRepository>();
+builder.Services.AddScoped<IIndustrialFacilityRepository, IndustrialFacilityRepository>();
+builder.Services.AddScoped<ILotRepository, LotRepository>();
+builder.Services.AddScoped<IMachineActivityStatusRepository, MachineActivityStatusRepository>();
+builder.Services.AddScoped<IMachineRepository, MachineRepository>();
+builder.Services.AddScoped<IOrderRepository, OrderRepository>();
 
 // Ignores cycles in JSON serialization
 builder.Services.Configure<JsonOptions>(options =>
@@ -47,5 +56,6 @@ app.UseHttpsRedirection();
 //var scopeRequiredByApi = app.Configuration["AzureAd:Scopes"] ?? "";
 
 // add endpoint extension methods
+app.MapOrdersEndPoints();
 
 app.Run();

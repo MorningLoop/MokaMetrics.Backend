@@ -1,7 +1,15 @@
-﻿namespace MokaMetrics.DataAccess.Abstractions;
+﻿using MokaMetrics.DataAccess.Abstractions.Repositories;
+
+namespace MokaMetrics.DataAccess.Abstractions;
 
 public interface IUnitOfWork
 {
-    // add here other repositories as needed
-    Task<int> CommitAsync(CancellationToken cancellationToken = default);
+    ICustomerRepository Customers { get; }
+    IIndustrialFacilityRepository IndustrialFacilities { get; }
+    ILotRepository Lots { get; }
+    IMachineActivityStatusRepository MachineActivityStatuses { get; }
+    IMachineRepository Machines { get; }
+    IOrderRepository Orders { get; }
+
+    Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }
