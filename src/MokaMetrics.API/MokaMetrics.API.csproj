@@ -9,6 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Confluent.Kafka" Version="2.10.1" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.5" NoWarn="NU1605" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="9.0.5" NoWarn="NU1605" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.5" />
@@ -31,6 +32,7 @@
     <ProjectReference Include="..\MokaMetrics.DataAccess.Abstractions\MokaMetrics.DataAccess.Abstractions.csproj" />
     <ProjectReference Include="..\MokaMetrics.DataAccess\MokaMetrics.DataAccess.csproj" />
     <ProjectReference Include="..\MokaMetrics.Models\MokaMetrics.Models.csproj" />
+    <ProjectReference Include="..\MokaMetrics.Services\MokaMetrics.Services.csproj" />
   </ItemGroup>
 
 </Project>

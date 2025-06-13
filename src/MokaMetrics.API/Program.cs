@@ -12,6 +12,8 @@ using MokaMetrics.DataAccess.Abstractions.Contexts;
 using MokaMetrics.DataAccess.Abstractions.Repositories;
 using MokaMetrics.DataAccess.Contexts;
 using MokaMetrics.DataAccess.Repositories;
+using MokaMetrics.Services;
+using MokaMetrics.Services.ServicesInterfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -27,7 +29,7 @@ builder.Services.AddDbContext<IApplicationDbContext, ApplicationDbContext>(optio
 {
     options.UseNpgsql(builder.Configuration.GetConnectionString("postgres"));
 });
-
+//DataAccess
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<ICustomerRepository, CustomerRepository>();
 builder.Services.AddScoped<IIndustrialFacilityRepository, IndustrialFacilityRepository>();
@@ -35,6 +37,8 @@ builder.Services.AddScoped<ILotRepository, LotRepository>();
 builder.Services.AddScoped<IMachineActivityStatusRepository, MachineActivityStatusRepository>();
 builder.Services.AddScoped<IMachineRepository, MachineRepository>();
 builder.Services.AddScoped<IOrderRepository, OrderRepository>();
+//Services
+builder.Services.AddScoped<IKafkaService, KafkaService>();
 
 // Ignores cycles in JSON serialization
 builder.Services.Configure<JsonOptions>(options =>
