@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Http.HttpResults;
+using MokaMetrics.Services.ServicesInterfaces;
 using System.Net.WebSockets;
 using System.Text;
 
@@ -20,14 +21,14 @@ namespace MokaMetrics.API.Endpoints
         }
 
         // Metodo per gestire il WebSocket
-        private static async Task<Results<Ok, BadRequest<string>>> WSStatus(HttpContext _httpContext)
+        private static async Task<Results<Ok, BadRequest<string>>> WSStatus(HttpContext _httpContext, IKafkaService _kafkaService)
         {
             if (_httpContext.WebSockets.IsWebSocketRequest)
             {
                 var webSocket = await _httpContext.WebSockets.AcceptWebSocketAsync();
                 var buffer = new byte[8];
                 //mettere controllo jvt (non lo facciamo tranq)
-
+                _kafkaService.GetValueTopic();
 
 
                 await webSocket.SendAsync(

@@ -18,9 +18,6 @@ namespace MokaMetrics.Services
                 GroupId = configuration.GetSection("Kafka:ConsumerGroupId").Value,
                 AutoOffsetReset = AutoOffsetReset.Earliest
             };
-
-
-
         }
 
         public void GetValueTopic()
@@ -28,7 +25,7 @@ namespace MokaMetrics.Services
             using (var consumer = new ConsumerBuilder<Ignore, string>(_producerConfig).Build())
             {
                 consumer.Subscribe(_brasilTopic);
-                var consumeResult = consumer.Consume();
+                var consumeResult = consumer.Consume(cancellationToken: CancellationToken.None);
                 consumer.Close();
             }
         }
