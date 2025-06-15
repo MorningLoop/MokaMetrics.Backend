@@ -4,10 +4,6 @@ using MokaMetrics.DataAccess.Influx.Settings;
 using MokaMetrics.Models.Influx;
 using InfluxDB3.Client;
 using InfluxDB3.Client.Write;
-using InfluxDB3.Client.Query;
-using System.Text.Json.Serialization;
-using System.Diagnostics.Metrics;
-
 
 namespace MokaMetrics.DataAccess.Influx;
 
@@ -22,7 +18,7 @@ public class InfluxDb3Service : IInfluxDb3Service, IDisposable
         _settings = settings ?? throw new ArgumentNullException(nameof(settings));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-        _client = new InfluxDBClient(_settings.Host, _settings.Token, _settings.Database);
+        _client = new InfluxDBClient(_settings.Host, _settings.Token, database: _settings.Database);
     }
 
     public async Task WriteDataAsync(TimeSeriesData data, CancellationToken cancellationToken = default)
@@ -30,7 +26,7 @@ public class InfluxDb3Service : IInfluxDb3Service, IDisposable
         try
         {
             var point = CreatePointData(data);
-            await _client.WritePointAsync(point, database: _settings.Database, cancellationToken: cancellationToken);
+            await _client.WritePointAsync(point, cancellationToken: cancellationToken);
 
             _logger.LogDebug("Successfully wrote data point for measurement: {Measurement}", data.Measurement);
         }
@@ -62,7 +58,7 @@ public class InfluxDb3Service : IInfluxDb3Service, IDisposable
         try
         {
             var sqlQuery = BuildSqlQuery(request);
-            var rawResults = await QuerySqlAsync(sqlQuery, cancellationToken);
+            var rawResults = await QuerySqlAsync(sqlQuery, request.Fields, cancellationToken);
 
             return ConvertToQueryResults(rawResults, request.Measurement ?? "unknown");
         }
@@ -73,21 +69,24 @@ public class InfluxDb3Service : IInfluxDb3Service, IDisposable
         }
     }
 
-    public async Task<IEnumerable<Dictionary<string, object>>> QuerySqlAsync(string sqlQuery, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<Dictionary<string, object>>> QuerySqlAsync(string sqlQuery, IList<string> selectFields, CancellationToken cancellationToken = default)
     {
         try
         {
-            var results = new List<Dictionary<string, object>>();
+            List<Dictionary<string, object>> results = new();
 
-            await foreach (var row in _client.Query(sqlQuery, database: _settings.Database))
+            selectFields = selectFields?.Count() > 0 ? selectFields : new string[] { "time", "location", "machine", "value" };
+
+            await foreach (var row in _client.Query(query: sqlQuery))
             {
-                int counter = 0;
+                var dict = new Dictionary<string, object>();
+
                 for (int i = 0; i < row.Length; i++)
                 {
-                    var dict = new Dictionary<string, object>();
-                    dict[$"{counter}"] = row[i];
+                    dict[selectFields[i]] = row[i];
                 }
-                counter++;
+
+                results.Add(dict);
             }
 
             _logger.LogDebug("Successfully executed SQL query and retrieved {Count} rows", results.Count);
@@ -100,39 +99,13 @@ public class InfluxDb3Service : IInfluxDb3Service, IDisposable
         }
     }
 
-    public async Task<IEnumerable<Dictionary<string, object>>> QuerySqlAsync(SqlQueryRequest request, CancellationToken cancellationToken = default)
-    {
-        try
-        {
-            // InfluxDB 3.0 client doesn't support parameterized queries in the same way as traditional SQL databases
-            // Parameters need to be substituted manually (with proper escaping)
-            var query = request.Query;
-
-            if (request.Parameters?.Any() == true)
-            {
-                foreach (var param in request.Parameters)
-                {
-                    var paramValue = EscapeSqlValue(param.Value);
-                    query = query.Replace($"@{param.Key}", paramValue);
-                }
-            }
-
-            return await QuerySqlAsync(query, cancellationToken);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to execute parameterized SQL query");
-            throw;
-        }
-    }
-
     public async Task<bool> HealthCheckAsync(CancellationToken cancellationToken = default)
     {
         try
         {
             // Simple health check by querying system information
             var healthQuery = "SELECT 1 as health_check LIMIT 1";
-            var results = await QuerySqlAsync(healthQuery, cancellationToken);
+            var results = await QuerySqlAsync(healthQuery, [], cancellationToken);
             return results.Any();
         }
         catch (Exception ex)
@@ -185,7 +158,7 @@ public class InfluxDb3Service : IInfluxDb3Service, IDisposable
 
     private string BuildSqlQuery(QueryRequest request)
     {
-        var selectClause = "SELECT *";
+        var selectClause = "SELECT time, location, machine, value";
 
         // Specify fields if provided
         if (request.Fields?.Any() == true)
@@ -206,11 +179,11 @@ public class InfluxDb3Service : IInfluxDb3Service, IDisposable
         // FROM clause with measurement
         if (!string.IsNullOrEmpty(request.Measurement))
         {
-            query += $" FROM \"{request.Measurement}\"";
+            query += $" FROM {request.Measurement}";
         }
         else
         {
-            query += $" FROM \"{_settings.Database}\"";
+            query += $" FROM {_settings.Database}";
         }
 
         var whereConditions = new List<string>();
@@ -218,12 +191,12 @@ public class InfluxDb3Service : IInfluxDb3Service, IDisposable
         // Time range conditions
         if (request.StartTime.HasValue)
         {
-            whereConditions.Add($"time >= '{request.StartTime.Value:yyyy-MM-dd HH:mm:ss}'");
+            whereConditions.Add($"time >= '{request.StartTime.Value:yyyy-MM-ddTHH:mm:ssZ}'");
         }
 
         if (request.EndTime.HasValue)
         {
-            whereConditions.Add($"time <= '{request.EndTime.Value:yyyy-MM-dd HH:mm:ss}'");
+            whereConditions.Add($"time <= '{request.EndTime.Value:yyyy-MM-ddTHH:mm:ssZ}'");
         }
 
         // Tag filters
@@ -304,10 +277,17 @@ public class InfluxDb3Service : IInfluxDb3Service, IDisposable
             {
                 if (key.Equals("time", StringComparison.OrdinalIgnoreCase))
                 {
-                    if (DateTime.TryParse(value?.ToString(), out var timestamp))
+                    if (long.TryParse(value?.ToString(), out var nanoseconds))
                     {
-                        result.Timestamp = timestamp;
+                        DateTime epochTime = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+                        result.Timestamp = epochTime.AddTicks(nanoseconds / 100);
                     }
+
+
+                    //if (DateTime.TryParse(value?.ToString(), out var timestamp))
+                    //{
+                    //    result.Timestamp = timestamp;
+                    //}
                 }
                 else if (IsTagColumn(key))
                 {

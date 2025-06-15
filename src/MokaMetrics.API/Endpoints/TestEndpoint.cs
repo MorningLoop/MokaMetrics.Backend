@@ -37,24 +37,6 @@ public static class TestEndpoints
         .WithName("QueryTimeSeriesDataV3")
         .WithSummary("Query time series data using structured request");
 
-        // Raw SQL query
-        group.MapPost("/query/sql", async (SqlQueryRequest request, IInfluxDb3Service influxDb) =>
-        {
-            var results = await influxDb.QuerySqlAsync(request);
-            return Results.Ok(results);
-        })
-        .WithName("SqlQueryV3")
-        .WithSummary("Execute raw SQL query against InfluxDB 3.0");
-
-        // Simple SQL query
-        group.MapPost("/query/sql/simple", async (SimpleQueryRequest request, IInfluxDb3Service influxDb) =>
-        {
-            var results = await influxDb.QuerySqlAsync(request.Query);
-            return Results.Ok(results);
-        })
-        .WithName("SimpleSqlQueryV3")
-        .WithSummary("Execute simple SQL query");
-
         // Health check
         group.MapGet("/health", async (IInfluxDb3Service influxDb) =>
         {
