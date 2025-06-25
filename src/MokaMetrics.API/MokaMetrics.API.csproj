@@ -6,6 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>aspnet-MokaMetrics.API-fd5a0260-1f35-4d8d-bec3-fbfbb77b7437</UserSecretsId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+    <DockerfileRunArguments>-p "8080:8080" -p "8081:8081"</DockerfileRunArguments>
   </PropertyGroup>
 
   <ItemGroup>

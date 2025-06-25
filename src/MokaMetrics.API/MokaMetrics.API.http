@@ -1,4 +1,4 @@
-@MokaMetrics.API_HostAddress = http://localhost:8080
+@MokaMetrics.API_HostAddress = https://localhost:8081
 
 GET {{MokaMetrics.API_HostAddress}}/api/orders
 Accept: application/json
