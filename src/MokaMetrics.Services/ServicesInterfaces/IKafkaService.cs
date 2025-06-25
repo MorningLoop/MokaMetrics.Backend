@@ -4,6 +4,8 @@ namespace MokaMetrics.Services.ServicesInterfaces
 {
     public interface IKafkaService
     {
-        Message<Ignore, string> GetValueTopicBrasil();
+        string? GetValueTopicBrasil();
+        Task<string?> GetLatestMessageAsync(CancellationToken cancellationToken = default);
+        Task<string?> GetLastAvailableMessageAsync(); // Nuovo metodo per ottenere l'ultimo messaggio disponibile
     }
 }

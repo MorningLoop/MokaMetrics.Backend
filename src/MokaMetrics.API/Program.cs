@@ -36,7 +36,7 @@ builder.Services.AddScoped<IMachineActivityStatusRepository, MachineActivityStat
 builder.Services.AddScoped<IMachineRepository, MachineRepository>();
 builder.Services.AddScoped<IOrderRepository, OrderRepository>();
 //Services
-builder.Services.AddScoped<IKafkaService, KafkaService>();
+builder.Services.AddSingleton<IKafkaService, KafkaService>();
 
 // Ignores cycles in JSON serialization
 builder.Services.Configure<JsonOptions>(options =>
@@ -59,7 +59,7 @@ var app = builder.Build();
 //configurazione websocket
 var webSocketOptions = new WebSocketOptions
 {
-    KeepAliveInterval = TimeSpan.FromMinutes(2), //la frequenza di invio di frame "ping" al client per garantire che i proxy tengano aperta la connessione. Il valore predefinito è due minuti.
+    KeepAliveInterval = TimeSpan.FromMinutes(2), //la frequenza di invio di frame "ping" al client per garantire che i proxy tengano aperta la connessione. Il valore predefinito ï¿½ due minuti.
 };
 
 app.UseWebSockets(webSocketOptions);
