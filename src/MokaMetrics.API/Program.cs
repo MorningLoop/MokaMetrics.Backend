@@ -33,7 +33,7 @@ builder.Services.AddScoped<IMachineActivityStatusRepository, MachineActivityStat
 builder.Services.AddScoped<IMachineRepository, MachineRepository>();
 builder.Services.AddScoped<IOrderRepository, OrderRepository>();
 //Services
-builder.Services.AddSingleton<IKafkaService, KafkaService>();
+builder.Services.AddScoped<IKafkaService, KafkaService>();
 
 // Ignores cycles in JSON serialization
 builder.Services.Configure<JsonOptions>(options =>

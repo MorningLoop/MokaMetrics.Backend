@@ -8,21 +8,26 @@ namespace MokaMetrics.Services
     {
         private ConsumerConfig _consumerConfig;
         private string? _brasilTopic;
-        private readonly IConsumer<Null, string> _consumer;
+        private readonly IConsumer<string, string> _consumer;
         private bool _isSubscribed = false;
 
         public KafkaService(IConfiguration configuration)
         {
+            Random rd = new Random();
             _brasilTopic = configuration.GetSection("Kafka:TopicBrasil").Value;
             _consumerConfig = new ConsumerConfig()
             {
                 BootstrapServers = configuration.GetSection("Kafka:Host").Value,
-                GroupId = configuration.GetSection("Kafka:ConsumerGroupId").Value,
-                AutoOffsetReset = AutoOffsetReset.Earliest,
+                GroupId = rd.Next().ToString(),
+                AutoOffsetReset = AutoOffsetReset.Latest,
                 EnableAutoCommit = false,
             };
 
-            _consumer = new ConsumerBuilder<Null, string>(_consumerConfig).Build();
+            _consumer = new ConsumerBuilder<string, string>(_consumerConfig)
+                .SetKeyDeserializer(Deserializers.Utf8)
+                .SetValueDeserializer(Deserializers.Utf8)
+                .SetErrorHandler((_, e) => Console.WriteLine($"Errore consumer Kafka: {e.Reason}"))
+                .Build();
         }
 
         public async Task<string?> GetLatestMessageAsync(CancellationToken cancellationToken = default)
@@ -33,11 +38,13 @@ namespace MokaMetrics.Services
                 {
                     _consumer.Subscribe(_brasilTopic);
                     _isSubscribed = true;
+                    Console.WriteLine($"Sottoscritto al topic: {_brasilTopic}");
                 }
 
                 var consumeResult = _consumer.Consume(TimeSpan.FromMilliseconds(1000));
                 if (consumeResult != null && consumeResult.Message != null)
                 {
+                    Console.WriteLine($"Messaggio ricevuto - Key: {consumeResult.Message.Key ?? "null"}, Value: {consumeResult.Message.Value}");
                     _consumer.Commit(consumeResult);
                     return consumeResult.Message.Value;
                 }
@@ -77,7 +84,11 @@ namespace MokaMetrics.Services
                     EnableAutoCommit = false,
                 };
 
-                using var tempConsumer = new ConsumerBuilder<Null, string>(config).Build();
+                using var tempConsumer = new ConsumerBuilder<string, string>(config)
+                    .SetKeyDeserializer(Deserializers.Utf8)
+                    .SetValueDeserializer(Deserializers.Utf8)
+                    .SetErrorHandler((_, e) => Console.WriteLine($"Errore temp consumer Kafka: {e.Reason}"))
+                    .Build();
                 var partition = new TopicPartition(_brasilTopic, 0);
                 var watermarkOffsets = tempConsumer.GetWatermarkOffsets(partition);
                 if (watermarkOffsets.High.Value > 0)
