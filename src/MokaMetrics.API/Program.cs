@@ -59,7 +59,7 @@ var app = builder.Build();
 //configurazione websocket
 var webSocketOptions = new WebSocketOptions
 {
-    KeepAliveInterval = TimeSpan.FromMinutes(2), //la frequenza di invio di frame "ping" al client per garantire che i proxy tengano aperta la connessione. Il valore predefinito è due minuti.
+    KeepAliveInterval = TimeSpan.FromMinutes(2), //la frequenza di invio di frame "ping" al client per garantire che i proxy tengano aperta la connessione. Il valore predefinito ï¿½ due minuti.
 };
 
 app.UseWebSockets(webSocketOptions);
@@ -68,6 +68,7 @@ app.UseWebSockets(webSocketOptions);
 //var scopeRequiredByApi = app.Configuration["AzureAd:Scopes"] ?? "";
 
 // add endpoint extension methods
+app.MapCustomersEndPoints();
 app.MapOrdersEndPoints();
 //wss\
 app.MapWSStatusEndPoints();
