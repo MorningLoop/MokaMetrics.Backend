@@ -81,6 +81,8 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
 
             e.Property(p => p.TotalQuantity).IsRequired();
             e.Property(p => p.ManufacturedQuantity).IsRequired();
+            e.Property(p => p.OrderId).IsRequired();
+            e.Property(p => p.LotCode).HasColumnType("varchar").HasMaxLength(50).IsRequired();
             e.Property(p => p.StartDate).HasColumnType("timestamp").IsRequired();
             e.Property(p => p.EndDate).HasColumnType("timestamp").IsRequired(false);
         });

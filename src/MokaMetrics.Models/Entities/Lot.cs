@@ -3,6 +3,7 @@
 public class Lot : Entity
 {
     public int OrderId { get; set; }
+    public string LotCode { get; set; }
     public int TotalQuantity { get; set; }
     public int ManufacturedQuantity { get; set; }
     public DateTime StartDate { get; set; }
