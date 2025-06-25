@@ -1,11 +1,8 @@
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http.Json;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Identity.Abstractions;
-using Microsoft.Identity.Web;
-using Microsoft.Identity.Web.Resource;
 using MokaMetrics.API.Endpoints;
+using MokaMetrics.API.Extensions;
+using MokaMetrics.API.HealthChecks;
 using MokaMetrics.DataAccess;
 using MokaMetrics.DataAccess.Abstractions;
 using MokaMetrics.DataAccess.Abstractions.Contexts;
@@ -44,6 +41,10 @@ builder.Services.Configure<JsonOptions>(options =>
         System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles);
 
 
+builder.Services.AddInfluxDb3(builder.Configuration);
+builder.Services.AddHealthChecks()
+    .AddCheck<InfluxDb3HealthCheck>("influxdb");
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -72,5 +73,6 @@ app.MapCustomersEndPoints();
 app.MapOrdersEndPoints();
 //wss\
 app.MapWSStatusEndPoints();
+app.MapInfluxTestEndpoints();
 
 app.Run();

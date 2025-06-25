@@ -4,3 +4,11 @@ GET {{MokaMetrics.API_HostAddress}}/api/orders
 Accept: application/json
 
 ###
+
+GET {{MokaMetrics.API_HostAddress}}/api/iot
+Accept: application/json
+
+###
+
+GET {{MokaMetrics.API_HostAddress}}/api/iot/health
+Accept: application/json
