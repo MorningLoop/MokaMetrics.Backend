@@ -9,8 +9,9 @@ using MokaMetrics.DataAccess.Abstractions.Contexts;
 using MokaMetrics.DataAccess.Abstractions.Repositories;
 using MokaMetrics.DataAccess.Contexts;
 using MokaMetrics.DataAccess.Repositories;
-using MokaMetrics.Services;
-using MokaMetrics.Services.ServicesInterfaces;
+using MokaMetrics.Kafka;
+using MokaMetrics.Kafka.Abstractions;
+using MokaMetrics.Kafka.Configuration;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -32,8 +33,32 @@ builder.Services.AddScoped<ILotRepository, LotRepository>();
 builder.Services.AddScoped<IMachineActivityStatusRepository, MachineActivityStatusRepository>();
 builder.Services.AddScoped<IMachineRepository, MachineRepository>();
 builder.Services.AddScoped<IOrderRepository, OrderRepository>();
+
 //Services
-builder.Services.AddSingleton<IKafkaService, KafkaService>();
+builder.Services.AddSingleton<IKafkaProducer>(kafka =>
+{
+    return new KafkaProducer(
+        new KafkaSettings()
+        {
+            BootstrapServers = builder.Configuration["Kafka:Host"] ?? "localhost:9092",
+            GroupId = builder.Configuration["Kafka:GroupId"] ?? "mokametrics-backend",
+            Topics = builder.Configuration.GetSection("Kafka:Topics").Get<List<string>>() ?? new List<string>(),
+            Producer = new ProducerSettings
+            {
+                RetryCount = int.Parse(builder.Configuration["Kafka:Producer:RetryCount"] ?? "3"),
+                TimeoutMs = int.Parse(builder.Configuration["Kafka:Producer:TimeoutMs"] ?? "30000"),
+                Acks = builder.Configuration["Kafka:Producer:Acks"] ?? "all"
+            },
+            Consumer = new ConsumerSettings
+            {
+                AutoOffsetReset = builder.Configuration["Kafka:Consumer:AutoOffsetReset"] ?? "earliest",
+                EnableAutoCommit = bool.Parse(builder.Configuration["Kafka:Consumer:EnableAutoCommit"] ?? "false"),
+                SessionTimeoutMs = int.Parse(builder.Configuration["Kafka:Consumer:SessionTimeoutMs"] ?? "30000")
+            }
+        },
+        kafka.GetRequiredService<Microsoft.Extensions.Logging.ILogger<KafkaProducer>>()
+    );
+});
 
 // Ignores cycles in JSON serialization
 builder.Services.Configure<JsonOptions>(options =>
@@ -72,7 +97,7 @@ app.UseWebSockets(webSocketOptions);
 app.MapCustomersEndPoints();
 app.MapOrdersEndPoints();
 //wss\
-app.MapWSStatusEndPoints();
+//app.MapWSStatusEndPoints();
 app.MapInfluxTestEndpoints();
 
 app.Run();

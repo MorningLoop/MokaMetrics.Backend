@@ -32,8 +32,8 @@
   <ItemGroup>
     <ProjectReference Include="..\MokaMetrics.DataAccess.Abstractions\MokaMetrics.DataAccess.Abstractions.csproj" />
     <ProjectReference Include="..\MokaMetrics.DataAccess\MokaMetrics.DataAccess.csproj" />
+    <ProjectReference Include="..\MokaMetrics.Kafka\MokaMetrics.Kafka.csproj" />
     <ProjectReference Include="..\MokaMetrics.Models\MokaMetrics.Models.csproj" />
-    <ProjectReference Include="..\MokaMetrics.Services\MokaMetrics.Services.csproj" />
   </ItemGroup>
 
 </Project>

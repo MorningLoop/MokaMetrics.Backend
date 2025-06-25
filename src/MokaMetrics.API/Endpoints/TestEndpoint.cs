@@ -1,5 +1,7 @@
 ﻿using MokaMetrics.DataAccess.Abstractions.Influx;
+using MokaMetrics.Kafka.Abstractions;
 using MokaMetrics.Models.Influx;
+using MokaMetrics.Models.Kafka;
 
 namespace MokaMetrics.API.Endpoints;
 
@@ -62,6 +64,23 @@ public static class TestEndpoints
         })
         .WithName("GetLatestDataV3")
         .WithSummary("Get latest data for a specific measurement");
+
+        group.MapPost("/kafka/test_producer", async (MessageRequest request, IKafkaProducer _kafkaProducer) =>
+        {
+            if (string.IsNullOrEmpty(request.Topic) || string.IsNullOrEmpty(request.Key) || string.IsNullOrEmpty(request.Value))
+            {
+                return Results.BadRequest("Topic, Key, and Value must be provided");
+            }
+            try
+            {
+                await _kafkaProducer.ProduceAsync(request.Topic, request.Key, request.Value);
+                return Results.Ok(new { message = "Message produced successfully" });
+            }
+            catch (Exception ex)
+            {
+                return Results.Problem(ex.Message);
+            }
+        });
 
         return group;
     }
