@@ -20,13 +20,14 @@ namespace MokaMetrics.Services
             };
         }
 
-        public void GetValueTopic()
+        public Message<Ignore, string> GetValueTopicBrasil()
         {
             using (var consumer = new ConsumerBuilder<Ignore, string>(_producerConfig).Build())
             {
                 consumer.Subscribe(_brasilTopic);
-                var consumeResult = consumer.Consume(cancellationToken: CancellationToken.None);
+                ConsumeResult<Ignore,string>? consumeResult = consumer.Consume(cancellationToken: CancellationToken.None);
                 consumer.Close();
+                return consumeResult.Message;
             }
         }
     }

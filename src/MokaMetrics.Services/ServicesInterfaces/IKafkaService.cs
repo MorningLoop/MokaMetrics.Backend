@@ -1,7 +1,9 @@
-﻿namespace MokaMetrics.Services.ServicesInterfaces
+﻿using Confluent.Kafka;
+
+namespace MokaMetrics.Services.ServicesInterfaces
 {
     public interface IKafkaService
     {
-        void GetValueTopic();
+        Message<Ignore, string> GetValueTopicBrasil();
     }
 }
