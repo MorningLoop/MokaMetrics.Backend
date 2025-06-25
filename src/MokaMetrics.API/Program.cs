@@ -68,6 +68,7 @@ app.UseWebSockets(webSocketOptions);
 //var scopeRequiredByApi = app.Configuration["AzureAd:Scopes"] ?? "";
 
 // add endpoint extension methods
+app.MapCustomersEndPoints();
 app.MapOrdersEndPoints();
 //wss\
 app.MapWSStatusEndPoints();
