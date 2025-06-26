@@ -8,7 +8,7 @@ public class MachineKafkaMessage
     public string LotCode { get; set; }
     public DateTime LocalTimestamp { get; set; }
     public DateTime UtcTimestamp { get; set; }
-    public string MachineId { get; set; }
+    public int MachineId { get; set; }
 
     public override string ToString()
     {
