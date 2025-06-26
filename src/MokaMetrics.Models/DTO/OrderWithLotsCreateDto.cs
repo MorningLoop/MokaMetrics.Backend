@@ -7,5 +7,5 @@ public class OrderWithLotsCreateDto
     public DateTime OrderDate { get; set; }
     public DateTime? Deadline { get; set; }
     public DateTime? FullfilledDate { get; set; }
-    List<LotDtoStrict>? Lots { get; set; }
+    public List<LotDtoStrict>? Lots { get; set; }
 }
