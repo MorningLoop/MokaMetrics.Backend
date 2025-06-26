@@ -42,10 +42,10 @@ public static class OrdersEndpoint
     }
     private static async Task<Created> CreateOrderAsync(IUnitOfWork _uow, OrderWithLotsCreateDto orderDto)
     {
-        //var order = OrderMapper.MapCreateOrder(orderDto);
-        //_uow.Orders.Add(order);
-        //await _uow.SaveChangesAsync();
-        //var result = ToDTOMapper.MapStrict(category);
+        var order = OrderMapper.MapCreateOrder(orderDto);
+        _uow.Orders.Add(order);
+        await _uow.SaveChangesAsync();
+        var lots = orderDto.Lots?.Select(l => LotMapper.MapToEntity(l)).ToList() ?? new List<Lot>();
         return TypedResults.Created($"/api/v1/orders/");
     }
     private static async Task<Results<Ok, NotFound>> UpdateOrderAsync(IUnitOfWork _uow, int id, OrderDtoStrict categoryDto)

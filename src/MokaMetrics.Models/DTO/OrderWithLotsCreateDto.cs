@@ -2,7 +2,6 @@
 
 public class OrderWithLotsCreateDto
 {
-    public int Id { get; set; }
     public string Name { get; set; } = string.Empty;
     public int QuantityMachines { get; set; }
     public DateTime OrderDate { get; set; }
