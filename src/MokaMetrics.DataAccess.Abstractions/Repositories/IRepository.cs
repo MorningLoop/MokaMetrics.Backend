@@ -14,4 +14,5 @@ public interface IRepository<T> where T : Entity
     abstract void Update(T entity);
     abstract void UpdateRange(IEnumerable<T> entities);
     void Delete(T entity);
+    void AddRange(IEnumerable<T> values);
 }

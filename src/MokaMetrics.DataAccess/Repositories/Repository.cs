@@ -57,6 +57,11 @@ public class Repository<T> : IRepository<T> where T : Entity
         return _context.Set<T>().Add(entity).Entity;
     }
 
+    public void AddRange(IEnumerable<T> values)
+    {
+        _context.Set<T>().AddRange(values);
+    }
+
     public virtual void Update(T entity)
     {
         _context.Entry(entity).State = EntityState.Modified;
