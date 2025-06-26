@@ -1,5 +1,8 @@
 using Microsoft.AspNetCore.Http.Json;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using MokaMetrics.API.Endpoints;
 using MokaMetrics.API.Extensions;
 using MokaMetrics.API.HealthChecks;
@@ -12,6 +15,7 @@ using MokaMetrics.DataAccess.Repositories;
 using MokaMetrics.Kafka;
 using MokaMetrics.Kafka.Abstractions;
 using MokaMetrics.Kafka.Configuration;
+using MokaMetrics.Kafka.Consumer;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -41,7 +45,7 @@ builder.Services.AddSingleton<IKafkaProducer>(kafka =>
         new KafkaSettings()
         {
             BootstrapServers = builder.Configuration["Kafka:Host"] ?? "localhost:9092",
-            GroupId = builder.Configuration["Kafka:GroupId"] ?? "mokametrics-backend",
+            GroupId = builder.Configuration["Kafka:GroupId"] ?? "mokametrics-backend-producer",
             Topics = builder.Configuration.GetSection("Kafka:Topics").Get<List<string>>() ?? new List<string>(),
             Producer = new ProducerSettings
             {
@@ -70,7 +74,46 @@ builder.Services.AddInfluxDb3(builder.Configuration);
 builder.Services.AddHealthChecks()
     .AddCheck<InfluxDb3HealthCheck>("influxdb");
 
+builder.Services.AddSingleton<TopicProcessor>(processor =>
+{
+    return new TopicProcessor(
+        processor.GetRequiredService<Microsoft.Extensions.Logging.ILogger<TopicProcessor>>(),
+        processor.GetRequiredService<IKafkaProducer>()
+    );
+});
 var app = builder.Build();
+
+var serviceProvider = app.Services;
+var hostApplicationLifetime = serviceProvider.GetRequiredService<IHostApplicationLifetime>();
+
+var backgroundService = new KafkaConsumerService(
+    new KafkaSettings()
+    {
+        BootstrapServers = builder.Configuration["Kafka:Consumer:Host"] ?? "localhost:9092",
+        GroupId = builder.Configuration["Kafka:Consumer:GroupId"] ?? "mokametrics-backend-consumer",
+        Topics = builder.Configuration.GetSection("Kafka:Topics").Get<List<string>>() ?? new List<string>(),
+        Consumer = new ConsumerSettings
+        {
+            AutoOffsetReset = builder.Configuration["Kafka:Consumer:AutoOffsetReset"] ?? "earliest",
+            EnableAutoCommit = bool.Parse(builder.Configuration["Kafka:Consumer:EnableAutoCommit"] ?? "false"),
+            SessionTimeoutMs = int.Parse(builder.Configuration["Kafka:Consumer:SessionTimeoutMs"] ?? "30000")
+        }
+    },
+    serviceProvider.GetRequiredService<ILogger<KafkaConsumerService>>()
+);
+
+_ = Task.Run(async () =>
+{
+    try
+    {
+        await backgroundService.StartAsync(hostApplicationLifetime.ApplicationStopping);
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Error starting Kafka consumer service: {ex.Message}");
+    }
+});
+
 AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 
 // Configure the HTTP request pipeline.
