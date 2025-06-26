@@ -8,6 +8,7 @@ namespace MokaMetrics.Models.DTO;
 
 public class LotDtoStrict
 {
+    public string LotCode { get; set; }
     public int OrderId { get; set; }
     public int TotalQuantity { get; set; }
     public int ManufacturedQuantity { get; set; }

@@ -1,7 +1,10 @@
 ﻿using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Mvc;
 using MokaMetrics.DataAccess.Abstractions;
+using MokaMetrics.Kafka.Abstractions;
 using MokaMetrics.Models.DTO;
 using MokaMetrics.Models.Entities;
+using MokaMetrics.Models.Kafka.Messages;
 using MokaMetrics.Models.Mappers;
 
 namespace MokaMetrics.API.Endpoints;
@@ -40,12 +43,26 @@ public static class OrdersEndpoint
         }
         return TypedResults.Ok(order);
     }
-    private static async Task<Created> CreateOrderAsync(IUnitOfWork _uow, OrderWithLotsCreateDto orderDto)
+    private static async Task<Created> CreateOrderAsync(IUnitOfWork _uow, IKafkaProducer _kafkaProducer, [FromBody]OrderWithLotsCreateDto orderDto)
     {
-        //var order = OrderMapper.MapCreateOrder(orderDto);
-        //_uow.Orders.Add(order);
-        //await _uow.SaveChangesAsync();
-        //var result = ToDTOMapper.MapStrict(category);
+        var order = OrderMapper.MapCreateOrder(orderDto);
+        _uow.Orders.Add(order);
+        await _uow.SaveChangesAsync();
+
+        foreach (var lot in order.Lots)
+        {
+            var orderLotMessage = new NewOrderLotMessage()
+            {
+                LocalTimestamp = DateTime.UtcNow,
+                UtcTimestamp = DateTime.UtcNow,
+                LotCode = lot.LotCode,
+                Site = (await _uow.IndustrialFacilities.GetById(lot.IndustrialFacilityId)).Country ?? "Italy",
+                MachinesToProduce = lot.TotalQuantity
+            };
+
+            await _kafkaProducer.ProduceAsync("orders", "order", orderLotMessage);
+        }
+
         return TypedResults.Created($"/api/v1/orders/");
     }
     private static async Task<Results<Ok, NotFound>> UpdateOrderAsync(IUnitOfWork _uow, int id, OrderDtoStrict categoryDto)

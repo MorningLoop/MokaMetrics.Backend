@@ -9,8 +9,9 @@ using MokaMetrics.DataAccess.Abstractions.Contexts;
 using MokaMetrics.DataAccess.Abstractions.Repositories;
 using MokaMetrics.DataAccess.Contexts;
 using MokaMetrics.DataAccess.Repositories;
-using MokaMetrics.Services;
-using MokaMetrics.Services.ServicesInterfaces;
+using MokaMetrics.Kafka;
+using MokaMetrics.Kafka.Abstractions;
+using MokaMetrics.Kafka.Configuration;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -32,8 +33,9 @@ builder.Services.AddScoped<ILotRepository, LotRepository>();
 builder.Services.AddScoped<IMachineActivityStatusRepository, MachineActivityStatusRepository>();
 builder.Services.AddScoped<IMachineRepository, MachineRepository>();
 builder.Services.AddScoped<IOrderRepository, OrderRepository>();
+
 //Services
-builder.Services.AddScoped<IKafkaService, KafkaService>();
+builder.Services.AddSingleton<IKafkaService, KafkaService>();
 
 // Ignores cycles in JSON serialization
 builder.Services.Configure<JsonOptions>(options =>
@@ -46,6 +48,7 @@ builder.Services.AddHealthChecks()
     .AddCheck<InfluxDb3HealthCheck>("influxdb");
 
 var app = builder.Build();
+AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 
 // Configure the HTTP request pipeline.
 //if (app.Environment.IsDevelopment())
@@ -72,7 +75,7 @@ app.UseWebSockets(webSocketOptions);
 app.MapCustomersEndPoints();
 app.MapOrdersEndPoints();
 //wss\
-app.MapWSStatusEndPoints();
+//app.MapWSStatusEndPoints();
 app.MapInfluxTestEndpoints();
 
 app.Run();
