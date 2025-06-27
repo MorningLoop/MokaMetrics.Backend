@@ -13,4 +13,8 @@
     <PackageReference Include="Microsoft.Extensions.Options" Version="9.0.6" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\MokaMetrics.DataAccess.Abstractions\MokaMetrics.DataAccess.Abstractions.csproj" />
+  </ItemGroup>
+
 </Project>
