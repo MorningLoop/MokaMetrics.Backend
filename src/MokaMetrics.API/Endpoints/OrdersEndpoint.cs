@@ -43,25 +43,35 @@ public static class OrdersEndpoint
         }
         return TypedResults.Ok(order);
     }
-    private static async Task<Created> CreateOrderAsync(IUnitOfWork _uow, IKafkaProducer _kafkaProducer, [FromBody]OrderWithLotsCreateDto orderDto)
+    private static async Task<Created> CreateOrderAsync(IUnitOfWork _uow, IKafkaProducer _kafkaProducer, [FromBody] OrderWithLotsCreateDto orderDto)
     {
         var order = OrderMapper.MapCreateOrder(orderDto);
         _uow.Orders.Add(order);
         await _uow.SaveChangesAsync();
 
-        foreach (var lot in order.Lots)
+        var orderLotMessage = new NewOrderLotMessage()
         {
-            var orderLotMessage = new NewOrderLotMessage()
-            {
-                LocalTimestamp = DateTime.UtcNow,
-                UtcTimestamp = DateTime.UtcNow,
-                LotCode = lot.LotCode,
-                Site = (await _uow.IndustrialFacilities.GetById(lot.IndustrialFacilityId)).Country ?? "Italy",
-                MachinesToProduce = lot.TotalQuantity
-            };
+            Customer = (await _uow.Customers.GetById(order.CustomerId)).Name,
+            QuantityMachines = orderDto.QuantityMachines,
+            OrderDate = order.OrderDate,
+            Deadline = order.Deadline.GetValueOrDefault(),
+            Lots = new List<LotMessage>()
+        };
 
-            await _kafkaProducer.ProduceAsync("order", $"orderid-{order.Id}", orderLotMessage);
+        foreach (var l in order.Lots)
+        {
+            orderLotMessage.Lots.Add(
+                new LotMessage()
+                {
+                    LotCode = l.LotCode,
+                    TotalQuantity = l.TotalQuantity,
+                    StartDate = l.StartDate,
+                    IndustrialFacility = (await _uow.IndustrialFacilities.GetById(l.IndustrialFacilityId)).Country
+                }
+            );
         }
+
+        await _kafkaProducer.ProduceAsync("mokametrics.order", $"orderid-{order.Id}", orderLotMessage);
 
         return TypedResults.Created($"/api/v1/orders/");
     }

@@ -38,6 +38,6 @@ public class MessageParserFactory
     public Type GetMessageType(string topic)
     {
         var parser = _parsers.FirstOrDefault(p => p.CanParse(topic));
-        return parser?.GetMessageType() ?? typeof(GeneralMessage);
+        return parser?.GetMessageType() ?? typeof(SiteMessage);
     }
 }

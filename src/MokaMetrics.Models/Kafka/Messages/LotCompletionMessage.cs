@@ -1,6 +1,6 @@
 ﻿namespace MokaMetrics.Models.Kafka.Messages;
 
-public class LotCompletionMessage : GeneralMessage
+public class LotCompletionMessage : SiteMessage
 {
     public int LotTotalQuantity { get; set; }
     public int LotProducedQuantity { get; set; }

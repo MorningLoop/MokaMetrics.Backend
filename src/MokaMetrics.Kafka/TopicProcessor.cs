@@ -48,9 +48,11 @@ public class TopicProcessor
             {
                 case CncMessage cncMessage:
                     await ProcessCncMessageAsync(cncMessage);
+                    await ProcessStatus(cncMessage.Site, "cnc", cncMessage.Error);
                     break;
                 case LatheMessage latheMessage:
                     await ProcessLatheMessageAsync(latheMessage);
+                    await ProcessStatus(latheMessage.Site, "cnc", latheMessage.Error);
                     break;
                 case AssemblyMessage assemblyMessage:
                     await ProcessAssemblyMessageAsync(assemblyMessage);
@@ -112,7 +114,6 @@ public class TopicProcessor
         _logger.LogInformation("Processing Lathe message...");
 
         _logger.LogInformation("Finished processing Lathe message...");
-
     }
 
     private async Task ProcessAssemblyMessageAsync(AssemblyMessage message)
@@ -120,7 +121,6 @@ public class TopicProcessor
         _logger.LogInformation("Processing Assembly message...");
 
         _logger.LogInformation("Finished processing Assembly message...");
-
     }
 
     private async Task ProcessTestingMessageAsync(TestingMessage message)
@@ -128,7 +128,6 @@ public class TopicProcessor
         _logger.LogInformation("Processing Testing message...");
 
         _logger.LogInformation("Finished processing Testing message...");
-
     }
 
     private async Task ProcessNewOrderLotMessageAsync(NewOrderLotMessage message)
@@ -147,21 +146,19 @@ public class TopicProcessor
 
 
         _logger.LogInformation("Finished processing NewOrderLot message...");
-
     }
 
-    private async Task CreateStatus(string location, string machine, bool alarm)
+    private async Task ProcessStatus(string location, string machine, string error)
     {
         _logger.LogInformation($"Processing status for {machine} machine in location {location}");
         try
         {
-
             var statusTsData = new TimeSeriesData
             {
                 Measurement = "status",
                 Fields = new Dictionary<string, object>
                 {
-                    { "value", alarm }
+                    { "value", !string.IsNullOrEmpty(error) }
                 },
                 Tags = new Dictionary<string, string>
                 {
@@ -170,6 +167,11 @@ public class TopicProcessor
                 },
                 Timestamp = DateTime.UtcNow
             };
+
+            if (!string.IsNullOrEmpty(error))
+            {
+                statusTsData.Fields.Add("error_message", error);
+            }
 
             await _influx.WriteDataAsync(statusTsData);
 

@@ -2,7 +2,7 @@
 
 namespace MokaMetrics.Models.Kafka.Messages;
 
-public class MachineKafkaMessage : GeneralMessage
+public class MachineKafkaMessage : SiteMessage
 {
     public int MachineId { get; set; }
     public int Status { get; set; }
