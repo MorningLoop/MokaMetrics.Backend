@@ -1,6 +1,6 @@
 ﻿namespace MokaMetrics.Models.Kafka.Messages;
 
-public class CncMessage : MachineKafkaMessage
+public class CncMessage : MachineMessage
 {
     public float CycleTime { get; set; }
     public float CuttingDepth { get; set; }

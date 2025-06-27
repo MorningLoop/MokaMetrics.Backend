@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using MokaMetrics.Models.Kafka.Messages.Base;
+using System.Text.Json;
 
 namespace MokaMetrics.Models.Kafka.Messages;
 

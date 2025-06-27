@@ -1,4 +1,6 @@
-﻿namespace MokaMetrics.Models.Kafka.Messages;
+﻿using MokaMetrics.Models.Kafka.Messages.Base;
+
+namespace MokaMetrics.Models.Kafka.Messages;
 
 public class LotCompletionMessage : SiteMessage
 {

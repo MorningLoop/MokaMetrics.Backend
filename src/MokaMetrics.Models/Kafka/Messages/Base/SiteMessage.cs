@@ -1,6 +1,6 @@
 ﻿using System.Text.Json;
 
-namespace MokaMetrics.Models.Kafka.Messages;
+namespace MokaMetrics.Models.Kafka.Messages.Base;
 
 public class SiteMessage : GeneralMessage
 {   
