@@ -5,9 +5,11 @@ using MokaMetrics.DataAccess.Abstractions;
 using MokaMetrics.DataAccess.Abstractions.Influx;
 using MokaMetrics.Kafka.Abstractions;
 using MokaMetrics.Kafka.MessageParsers.Base;
+using MokaMetrics.Models.Helpers;
 using MokaMetrics.Models.Influx;
 using MokaMetrics.Models.Kafka.Messages;
 using System.Reflection;
+using System.Text.Json;
 
 namespace MokaMetrics.Kafka.Consumer;
 
@@ -136,7 +138,7 @@ public class TopicProcessor
 
         lot.UpdatedAt = DateTime.UtcNow;
         lot.ManufacturedQuantity = message.LotProducedQuantity;
-        
+
         if (lot.ManufacturedQuantity == lot.TotalQuantity)
         {
             var order = await _uow.Orders.GetOrderWithLotsAsync(lot.OrderId);
@@ -156,25 +158,53 @@ public class TopicProcessor
     {
         try
         {
+            var batch = new List<TimeSeriesData>();
+
             foreach (PropertyInfo property in message.GetType().GetProperties(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Instance))
             {
-                var tsData = new TimeSeriesData()
+                if (property.PropertyType == typeof(Dictionary<string, bool>))
                 {
-                    Measurement = property.Name,
-                    Fields = new Dictionary<string, object>()
+                    string serializedDict = JsonSerializer.Serialize(property.GetValue(message), new JsonSerializerOptions() { PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower });
+
+                    batch.Add(new TimeSeriesData()
                     {
-                        { "value", property.GetValue(message) ?? 0 },
-                    },
-                    Tags = new Dictionary<string, string>()
+                        Measurement = property.Name,
+                        Fields = new Dictionary<string, object>()
+                        {
+                            { "value", serializedDict },
+                        },
+                        Tags = new Dictionary<string, string>()
+                        {
+                            { "location", message.Site.ToLower() },
+                            { "machine", message.MachineId},
+                            { "lot_code", message.LotCode },
+                            { "local_timestamp", message.LocalTimestamp?.ToString("o") }
+                        },
+                        Timestamp = message.UtcTimestamp
+                    });
+                }
+                else
+                {
+                    batch.Add(new TimeSeriesData()
                     {
-                        { "location", message.Site.ToLower() },
-                        { "machine", "cnc" },
-                        { "lot_code", message.LotCode },
-                        { "local_timestamp", message.LocalTimestamp?.ToString("o") }
-                    },
-                    Timestamp = message.UtcTimestamp
-                };
+                        Measurement = property.Name,
+                        Fields = new Dictionary<string, object>()
+                        {
+                            { "value", property.GetValue(message) ?? 0 },
+                        },
+                        Tags = new Dictionary<string, string>()
+                        {
+                            { "location", message.Site.ToLower() },
+                            { "machine", message.MachineId},
+                            { "lot_code", message.LotCode },
+                            { "local_timestamp", message.LocalTimestamp?.ToString("o") }
+                        },
+                        Timestamp = message.UtcTimestamp
+                    });
+                }
             }
+
+            await _influx.WriteDataAsync(batch);
         }
         catch (Exception ex)
         {
@@ -193,7 +223,7 @@ public class TopicProcessor
                 Measurement = "status",
                 Fields = new Dictionary<string, object>
                 {
-                    { "value", !string.IsNullOrEmpty(error) }
+                    { "value", error != "None" ? MachineStatuses.Alarm : MachineStatuses.Operational  }
                 },
                 Tags = new Dictionary<string, string>
                 {
@@ -203,7 +233,7 @@ public class TopicProcessor
                 Timestamp = DateTime.UtcNow
             };
 
-            if (!string.IsNullOrEmpty(error))
+            if (error != "None")
             {
                 statusTsData.Fields.Add("error_message", error);
             }
