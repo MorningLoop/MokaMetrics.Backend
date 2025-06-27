@@ -60,7 +60,7 @@ public static class OrdersEndpoint
                 MachinesToProduce = lot.TotalQuantity
             };
 
-            await _kafkaProducer.ProduceAsync("orders", "order", orderLotMessage);
+            await _kafkaProducer.ProduceAsync("order", $"orderid-{order.Id}", orderLotMessage);
         }
 
         return TypedResults.Created($"/api/v1/orders/");
