@@ -1,6 +1,9 @@
 ﻿using MokaMetrics.DataAccess.Abstractions.Influx;
 using MokaMetrics.DataAccess.Influx;
 using MokaMetrics.DataAccess.Influx.Settings;
+using MokaMetrics.Kafka.Abstractions;
+using MokaMetrics.Kafka.MessageParsers;
+using MokaMetrics.Kafka.MessageParsers.Base;
 
 namespace MokaMetrics.API.Extensions;
 
@@ -24,6 +27,18 @@ public static class ServiceCollectionExtensions
         services.AddSingleton(settings);
         services.AddSingleton<IInfluxDb3Service, InfluxDb3Service>();
 
+        return services;
+    }
+
+    public static IServiceCollection AddMessageParsers(this IServiceCollection services)
+    {
+        services.AddTransient<IMessageParser, CncMessageParser>();
+        services.AddTransient<IMessageParser, LatheMessageParser>();
+        services.AddTransient<IMessageParser, AssemblyMessageParser>();
+        services.AddTransient<IMessageParser, TestingMessageParser>();
+        services.AddTransient<IMessageParser, LotCompletionMessageParser>();
+        services.AddTransient<IMessageParser, NewOrderLotMessageParser>();
+        services.AddSingleton<MessageParserFactory>();
         return services;
     }
 }
