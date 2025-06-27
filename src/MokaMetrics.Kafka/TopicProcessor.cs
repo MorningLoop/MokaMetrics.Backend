@@ -1,60 +1,183 @@
 ﻿using Microsoft.Extensions.Logging;
 using MokaMetrics.DataAccess.Abstractions.Influx;
 using MokaMetrics.Kafka.Abstractions;
+using MokaMetrics.Kafka.MessageParsers.Base;
+using MokaMetrics.Models.Influx;
 using MokaMetrics.Models.Kafka.Messages;
-using System.Text.Json;
+using System.Reflection;
 
 namespace MokaMetrics.Kafka.Consumer;
+
 public class TopicProcessor
 {
     private readonly ILogger<TopicProcessor> _logger;
     private readonly IKafkaProducer _kafkaProducer;
     private readonly IInfluxDb3Service _influx;
-    public TopicProcessor(ILogger<TopicProcessor> logger, IKafkaProducer kafkaProducer, IInfluxDb3Service influx)
+    private readonly MessageParserFactory _messageParserFactory;
+
+    public TopicProcessor(
+        ILogger<TopicProcessor> logger,
+        IKafkaProducer kafkaProducer,
+        IInfluxDb3Service influx,
+        MessageParserFactory messageParserFactory)
     {
         _logger = logger;
         _kafkaProducer = kafkaProducer;
         _influx = influx;
+        _messageParserFactory = messageParserFactory;
     }
+
     public async Task ProcessMessageAsync(string topic, string message)
     {
         try
         {
-            var messageObj = new GeneralMessage();
-            switch (topic)
+            _logger.LogInformation("Processing message for topic {Topic}", topic);
+
+            // Determine the correct message type based on the topic
+            var messageType = _messageParserFactory.GetMessageType(topic);
+
+            // Use reflection to call the correct generic method
+            var method = typeof(MessageParserFactory)
+                .GetMethod(nameof(MessageParserFactory.ParseMessage), new[] { typeof(string), typeof(string) })
+                .MakeGenericMethod(messageType);
+
+            var messageObj = method.Invoke(_messageParserFactory, new object[] { topic, message });
+
+            // Process based on the specific message type
+            switch (messageObj)
             {
-                case "mokametrics.telemetry.cnc":
-                    _logger.LogInformation("Processing message for cnc: {Message}", message);
-                    messageObj = JsonSerializer.Deserialize<CncMessage>(message);
+                case CncMessage cncMessage:
+                    await ProcessCncMessageAsync(cncMessage);
                     break;
-                case "mokametrics.telemetry.lathe":
-                    
-                    _logger.LogInformation("Processing message for lathe: {Message}", message);
-                    
+                case LatheMessage latheMessage:
+                    await ProcessLatheMessageAsync(latheMessage);
                     break;
-                case "mokametrics.telemetry.assembly":
-                    
-                    _logger.LogInformation("Processing message for assembly: {Message}", message);
-                    
+                case AssemblyMessage assemblyMessage:
+                    await ProcessAssemblyMessageAsync(assemblyMessage);
                     break;
-                case "mokametrics.telemetry.testing":
-                    
-                    _logger.LogInformation("Processing message for testing: {Message}", message);
-                    
+                case TestingMessage testingMessage:
+                    await ProcessTestingMessageAsync(testingMessage);
                     break;
-                case "mokametrics.production.lot_completion":
-                    
-                    _logger.LogInformation("Processing message for lot_completion: {Message}", message);
-                    
+                case LotCompletionMessage lotCompletionMessage:
+                    await ProcessLotCompletionMessageAsync(lotCompletionMessage);
                     break;
                 default:
-                    _logger.LogWarning("No processing logic defined for topic: {Topic}", topic);
+                    _logger.LogWarning("No processing logic implemented for message type: {Type}", messageObj.GetType().Name);
                     break;
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error processing message from topic {Topic}: {Message}", topic, message);
+            _logger.LogError(ex, "Error processing message from topic {Topic}", topic);
+            throw;
+        }
+    }
+
+    private async Task ProcessCncMessageAsync(CncMessage message)
+    {
+        _logger.LogInformation("Processing CNC message...");
+
+        try
+        {
+            foreach (PropertyInfo property in typeof(CncMessage).GetProperties())
+            {
+                var tsData = new TimeSeriesData()
+                {
+                    Measurement = property.Name,
+                    Fields = new Dictionary<string, object>()
+                    {
+                        { "value", property.GetValue(message) ?? 0 },
+                    },
+                    Tags = new Dictionary<string, string>()
+                    {
+                        { "location", message.Site.ToLower() },
+                        { "machine", "cnc" },
+                        { "lot_code", message.LotCode },
+                        { "local_timestamp", message.LocalTimestamp?.ToString("o") ?? DateTime.UtcNow.ToString("o") }
+                    },
+                    Timestamp = message.UtcTimestamp ?? DateTime.UtcNow
+                };
+            }
+            _logger.LogInformation("Finished processing CNC message...");
+        }
+        catch (Exception)
+        {
+
+            throw;
+        }
+    }
+
+    private async Task ProcessLatheMessageAsync(LatheMessage message)
+    {
+        _logger.LogInformation("Processing Lathe message...");
+
+        _logger.LogInformation("Finished processing Lathe message...");
+
+    }
+
+    private async Task ProcessAssemblyMessageAsync(AssemblyMessage message)
+    {
+        _logger.LogInformation("Processing Assembly message...");
+
+        _logger.LogInformation("Finished processing Assembly message...");
+
+    }
+
+    private async Task ProcessTestingMessageAsync(TestingMessage message)
+    {
+        _logger.LogInformation("Processing Testing message...");
+
+        _logger.LogInformation("Finished processing Testing message...");
+
+    }
+
+    private async Task ProcessNewOrderLotMessageAsync(NewOrderLotMessage message)
+    {
+        _logger.LogInformation("Processing NewOrderLot Message...");
+
+
+
+        _logger.LogInformation("Finished processing NewOrderLot message...");
+    }
+
+    private async Task ProcessLotCompletionMessageAsync(LotCompletionMessage message)
+    {
+        _logger.LogInformation("Processing NewOrderLot Message...");
+
+
+
+        _logger.LogInformation("Finished processing NewOrderLot message...");
+
+    }
+
+    private async Task CreateStatus(string location, string machine, bool alarm)
+    {
+        _logger.LogInformation($"Processing status for {machine} machine in location {location}");
+        try
+        {
+
+            var statusTsData = new TimeSeriesData
+            {
+                Measurement = "status",
+                Fields = new Dictionary<string, object>
+                {
+                    { "value", alarm }
+                },
+                Tags = new Dictionary<string, string>
+                {
+                    { "location", location.ToLower() },
+                    { "machine", machine.ToLower() }
+                },
+                Timestamp = DateTime.UtcNow
+            };
+
+            await _influx.WriteDataAsync(statusTsData);
+
+            _logger.LogInformation($"Finished processing status for {machine} machine in location {location}");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Error processing status for {machine} machine in location {location}", ex.Message);
             throw;
         }
     }
