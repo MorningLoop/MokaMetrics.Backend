@@ -34,7 +34,7 @@ namespace MokaMetrics.API.Endpoints
         
         private static async Task<Results<Ok<Customer>, NotFound>> GetCustomerByIdAsync(IUnitOfWork _uow, int id)
         {
-            var customer = await _uow.Customers.GetById(id);
+            var customer = await _uow.Customers.GetByIdAsync(id);
             if (customer == null)
             {
                 return TypedResults.NotFound();
@@ -52,7 +52,7 @@ namespace MokaMetrics.API.Endpoints
         
         private static async Task<Results<Ok, NotFound>> UpdateCustomerAsync(IUnitOfWork _uow, int id, CustomerDtoStrict customerDto)
         {
-            var existingCustomer = await _uow.Customers.GetById(id);
+            var existingCustomer = await _uow.Customers.GetByIdAsync(id);
             if (existingCustomer == null)
             {
                 return TypedResults.NotFound();
@@ -77,7 +77,7 @@ namespace MokaMetrics.API.Endpoints
         
         private static async Task<Results<NoContent, NotFound>> DeleteCustomerAsync(IUnitOfWork _uow, int id)
         {
-            var customer = await _uow.Customers.GetById(id);
+            var customer = await _uow.Customers.GetByIdAsync(id);
             if (customer == null)
             {
                 return TypedResults.NotFound();

@@ -36,7 +36,7 @@ public static class OrdersEndpoint
     }
     private static async Task<Results<Ok<Order>, NotFound>> GetOrderByIdAsync(IUnitOfWork _uow, int id)
     {
-        var order = await _uow.Orders.GetById(id);
+        var order = await _uow.Orders.GetByIdAsync(id);
         if (order == null)
         {
             return TypedResults.NotFound();
@@ -51,7 +51,7 @@ public static class OrdersEndpoint
 
         var orderLotMessage = new NewOrderLotMessage()
         {
-            Customer = (await _uow.Customers.GetById(order.CustomerId)).Name,
+            Customer = (await _uow.Customers.GetByIdAsync(order.CustomerId)).Name,
             QuantityMachines = orderDto.QuantityMachines,
             OrderDate = order.OrderDate,
             Deadline = order.Deadline.GetValueOrDefault(),
@@ -66,7 +66,7 @@ public static class OrdersEndpoint
                     LotCode = l.LotCode,
                     TotalQuantity = l.TotalQuantity,
                     StartDate = l.StartDate,
-                    IndustrialFacility = (await _uow.IndustrialFacilities.GetById(l.IndustrialFacilityId)).Country
+                    IndustrialFacility = (await _uow.IndustrialFacilities.GetByIdAsync(l.IndustrialFacilityId)).Country
                 }
             );
         }
@@ -81,7 +81,7 @@ public static class OrdersEndpoint
     }
     private static async Task<Results<NoContent, NotFound>> DeleteOrderAsync(IUnitOfWork _uow, int id)
     {
-        var order = await _uow.Orders.GetById(id);
+        var order = await _uow.Orders.GetByIdAsync(id);
         if (order == null)
         {
             return TypedResults.NotFound();
