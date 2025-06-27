@@ -1,4 +1,4 @@
-using MokaMetrics.Models.Kafka.Messages;
+using MokaMetrics.Models.Kafka.Messages.Base;
 
 namespace MokaMetrics.Kafka.Abstractions;
 
