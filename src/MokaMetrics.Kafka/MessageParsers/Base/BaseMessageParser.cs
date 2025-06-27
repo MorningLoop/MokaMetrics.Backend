@@ -1,5 +1,5 @@
 using MokaMetrics.Kafka.Abstractions;
-using MokaMetrics.Models.Kafka.Messages;
+using MokaMetrics.Models.Kafka.Messages.Base;
 using System.Text.Json;
 
 namespace MokaMetrics.Kafka.MessageParsers.Base;

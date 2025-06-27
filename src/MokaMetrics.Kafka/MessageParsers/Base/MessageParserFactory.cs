@@ -1,6 +1,6 @@
-using MokaMetrics.Models.Kafka.Messages;
 using Microsoft.Extensions.Logging;
 using MokaMetrics.Kafka.Abstractions;
+using MokaMetrics.Models.Kafka.Messages.Base;
 
 namespace MokaMetrics.Kafka.MessageParsers.Base;
 
