@@ -11,11 +11,13 @@ public class KafkaConsumerService : BackgroundService
     private IConsumer<string, string>? _consumer;
     private readonly KafkaSettings _settings;
     private readonly ILogger<KafkaConsumerService> _logger;
+    private readonly TopicProcessor _topicProcessor;
 
-    public KafkaConsumerService(KafkaSettings settings, ILogger<KafkaConsumerService> logger)
+    public KafkaConsumerService(KafkaSettings settings, ILogger<KafkaConsumerService> logger, TopicProcessor topicProcessor)
     {
         _settings = settings;
         _logger = logger;
+        _topicProcessor = topicProcessor;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -132,41 +134,8 @@ public class KafkaConsumerService : BackgroundService
 
     private async Task ProcessByTopic(string topic, string key, string value)
     {
-        // Route message processing based on topic
-        switch (topic.ToLowerInvariant())
-        {
-            case "user-events":
-                await ProcessUserEvent(key, value);
-                break;
-            case "order-events":
-                await ProcessOrderEvent(key, value);
-                break;
-            default:
-                _logger.LogInformation("Processing generic message from topic {Topic}", topic);
-                // Generic processing logic
-                break;
-        }
-    }
-
-    private async Task ProcessUserEvent(string key, string value)
-    {
-        // Example: Process user-related events
-        _logger.LogInformation("Processing user event - Key: {Key}", key);
-
-        // Here you would implement your business logic
-        // For example: deserialize JSON, call services, update database, etc.
-
-        await Task.Delay(100); // Simulate processing time
-    }
-
-    private async Task ProcessOrderEvent(string key, string value)
-    {
-        // Example: Process order-related events
-        _logger.LogInformation("Processing order event - Key: {Key}", key);
-
-        // Business logic for order events
-        await Task.Delay(100); // Simulate processing time
-    }
+        await _topicProcessor.ProcessMessageAsync(topic, value);
+    } 
 
     public override void Dispose()
     {
