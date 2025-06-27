@@ -9,6 +9,7 @@ using MokaMetrics.API.HealthChecks;
 using MokaMetrics.DataAccess;
 using MokaMetrics.DataAccess.Abstractions;
 using MokaMetrics.DataAccess.Abstractions.Contexts;
+using MokaMetrics.DataAccess.Abstractions.Influx;
 using MokaMetrics.DataAccess.Abstractions.Repositories;
 using MokaMetrics.DataAccess.Contexts;
 using MokaMetrics.DataAccess.Repositories;
@@ -16,6 +17,8 @@ using MokaMetrics.Kafka;
 using MokaMetrics.Kafka.Abstractions;
 using MokaMetrics.Kafka.Configuration;
 using MokaMetrics.Kafka.Consumer;
+using MokaMetrics.Kafka.MessageParsers;
+using MokaMetrics.Kafka.MessageParsers.Base;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -24,12 +27,13 @@ var builder = WebApplication.CreateBuilder(args);
 //    .AddMicrosoftIdentityWebApi(builder.Configuration.GetSection("AzureAd"));
 //builder.Services.AddAuthorization();
 
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
+// Postgres Db Context
 builder.Services.AddDbContext<IApplicationDbContext, ApplicationDbContext>(options =>
 {
     options.UseNpgsql(builder.Configuration.GetConnectionString("postgres"));
 });
-//DataAccess
+
+// DataAccess
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<ICustomerRepository, CustomerRepository>();
 builder.Services.AddScoped<IIndustrialFacilityRepository, IndustrialFacilityRepository>();
@@ -37,6 +41,14 @@ builder.Services.AddScoped<ILotRepository, LotRepository>();
 builder.Services.AddScoped<IMachineActivityStatusRepository, MachineActivityStatusRepository>();
 builder.Services.AddScoped<IMachineRepository, MachineRepository>();
 builder.Services.AddScoped<IOrderRepository, OrderRepository>();
+
+// broker message parsers
+builder.Services.AddTransient<IMessageParser, CncMessageParser>();
+builder.Services.AddTransient<IMessageParser, LatheMessageParser>();
+builder.Services.AddTransient<IMessageParser, AssemblyMessageParser>();
+builder.Services.AddTransient<IMessageParser, TestingMessageParser>();
+builder.Services.AddSingleton<MessageParserFactory>();
+
 
 // Kafka
 builder.Services.AddSingleton<IKafkaProducer>(kafka =>
@@ -70,6 +82,7 @@ builder.Services.Configure<JsonOptions>(options =>
         System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles);
 
 
+// InfluxDb
 builder.Services.AddInfluxDb3(builder.Configuration);
 builder.Services.AddHealthChecks()
     .AddCheck<InfluxDb3HealthCheck>("influxdb");
@@ -78,7 +91,9 @@ builder.Services.AddSingleton<TopicProcessor>(processor =>
 {
     return new TopicProcessor(
         processor.GetRequiredService<Microsoft.Extensions.Logging.ILogger<TopicProcessor>>(),
-        processor.GetRequiredService<IKafkaProducer>()
+        processor.GetRequiredService<IKafkaProducer>(),
+        processor.GetRequiredService<IInfluxDb3Service>(),
+        processor.GetRequiredService<MessageParserFactory>()
     );
 });
 var app = builder.Build();
@@ -86,6 +101,7 @@ var app = builder.Build();
 var serviceProvider = app.Services;
 var hostApplicationLifetime = serviceProvider.GetRequiredService<IHostApplicationLifetime>();
 
+// Kafka consumer
 var backgroundService = new KafkaConsumerService(
     new KafkaSettings()
     {
