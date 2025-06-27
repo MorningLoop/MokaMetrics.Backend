@@ -107,6 +107,9 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
                 .WithMany()
                 .HasForeignKey(x => x.IndustrialFacilityId);
 
+            e.Property(p => p.IndustrialFacilityId).IsRequired();
+
+            e.Property(p => p.Code).HasColumnType("varchar").HasMaxLength(255).IsRequired();
             e.Property(p => p.Model).HasColumnType("varchar").HasMaxLength(255).IsRequired();
             e.Property(p => p.Status).IsRequired();
         });
