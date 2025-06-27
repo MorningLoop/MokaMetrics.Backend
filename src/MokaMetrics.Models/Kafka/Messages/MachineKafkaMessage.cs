@@ -2,16 +2,10 @@
 
 namespace MokaMetrics.Models.Kafka.Messages;
 
-public class MachineKafkaMessage
+public class MachineKafkaMessage : GeneralMessage
 {
-    public string Site { get; set; } // italy, brazil, vietnam
-    public string LotCode { get; set; }
-    public DateTime LocalTimestamp { get; set; }
-    public DateTime UtcTimestamp { get; set; }
     public int MachineId { get; set; }
-
-    public override string ToString()
-    {
-        return JsonSerializer.Serialize(this);
-    }
+    public int Status { get; set; }
+    public int CompletedPiecesFromLastMaintenance { get; set; }
+    public string? Error { get; set; }
 }
