@@ -43,12 +43,9 @@ builder.Services.AddScoped<IMachineRepository, MachineRepository>();
 builder.Services.AddScoped<IOrderRepository, OrderRepository>();
 
 // broker message parsers
-builder.Services.AddTransient<IMessageParser, CncMessageParser>();
-builder.Services.AddTransient<IMessageParser, LatheMessageParser>();
-builder.Services.AddTransient<IMessageParser, AssemblyMessageParser>();
-builder.Services.AddTransient<IMessageParser, TestingMessageParser>();
-builder.Services.AddSingleton<MessageParserFactory>();
+builder.Services.AddMessageParsers();
 
+builder.Services.AddSingleton<TopicProcessor>();
 
 // Kafka
 builder.Services.AddSingleton<IKafkaProducer>(kafka =>
@@ -87,13 +84,14 @@ builder.Services.AddInfluxDb3(builder.Configuration);
 builder.Services.AddHealthChecks()
     .AddCheck<InfluxDb3HealthCheck>("influxdb");
 
-builder.Services.AddSingleton<TopicProcessor>(processor =>
+builder.Services.AddTransient<TopicProcessor>(processor =>
 {
     return new TopicProcessor(
         processor.GetRequiredService<Microsoft.Extensions.Logging.ILogger<TopicProcessor>>(),
         processor.GetRequiredService<IKafkaProducer>(),
         processor.GetRequiredService<IInfluxDb3Service>(),
-        processor.GetRequiredService<MessageParserFactory>()
+        processor.GetRequiredService<MessageParserFactory>(),
+        processor.GetRequiredService<IServiceScopeFactory>()
     );
 });
 var app = builder.Build();
@@ -115,7 +113,8 @@ var backgroundService = new KafkaConsumerService(
             SessionTimeoutMs = int.Parse(builder.Configuration["Kafka:Consumer:SessionTimeoutMs"] ?? "30000")
         }
     },
-    serviceProvider.GetRequiredService<ILogger<KafkaConsumerService>>()
+    serviceProvider.GetRequiredService<ILogger<KafkaConsumerService>>(),
+    serviceProvider.GetRequiredService<TopicProcessor>()
 );
 
 _ = Task.Run(async () =>
@@ -133,12 +132,12 @@ _ = Task.Run(async () =>
 AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 
 // Configure the HTTP request pipeline.
-//if (app.Environment.IsDevelopment())
-//{
-//    app.UseSwagger();
-//    app.UseSwaggerUI();
-//    app.MapOpenApi();
-//}
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+    //app.MapOpenApi();
+}
 
 //app.UseHttpsRedirection();
 
