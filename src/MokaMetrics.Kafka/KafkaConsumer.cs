@@ -110,7 +110,8 @@ public class KafkaConsumer : IKafkaConsumer
 
             // Here you could implement dead letter queue logic
             // or other error handling strategies
-            throw; // Re-throw to prevent commit if auto-commit is disabled
+            // Re-throw to prevent commit if auto-commit is disabled
+            throw; 
         }
     }
 

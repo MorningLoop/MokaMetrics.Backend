@@ -1,19 +1,17 @@
 using Microsoft.AspNetCore.Http.Json;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using MokaMetrics.API.Endpoints;
 using MokaMetrics.API.Extensions;
 using MokaMetrics.API.HealthChecks;
-using MokaMetrics.DataAccess;
-using MokaMetrics.DataAccess.Abstractions;
 using MokaMetrics.DataAccess.Abstractions.Contexts;
 using MokaMetrics.DataAccess.Abstractions.Influx;
-using MokaMetrics.DataAccess.Abstractions.Repositories;
 using MokaMetrics.DataAccess.Contexts;
-using MokaMetrics.DataAccess.Repositories;
 using MokaMetrics.Kafka;
 using MokaMetrics.Kafka.Abstractions;
 using MokaMetrics.Kafka.Consumer;
 using MokaMetrics.Kafka.MessageParsers.Base;
+using MokaMetrics.SignalR.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -62,8 +60,25 @@ builder.Services.AddTransient<TopicProcessor>(processor =>
         processor.GetRequiredService<IKafkaProducer>(),
         processor.GetRequiredService<IInfluxDb3Service>(),
         processor.GetRequiredService<MessageParserFactory>(),
-        processor.GetRequiredService<IServiceScopeFactory>()
+        processor.GetRequiredService<IServiceScopeFactory>(),
+        processor.GetRequiredService<IHubContext<ProductionHub>>()
     );
+});
+
+builder.Services.AddSignalR();
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowReactApp", policy =>
+    {
+        string[] origins = new string[] {
+            builder.Configuration["Cors:AllowedOrigin"],
+        };
+        policy.WithOrigins(origins)
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials();
+    });
 });
 
 // ==== APP BUILD ====
@@ -102,9 +117,11 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
     //app.MapOpenApi();
+    app.UseCors("AllowReactApp");
 }
 
-//app.UseHttpsRedirection();
+if (app.Environment.IsProduction())
+    app.UseHttpsRedirection();
 
 //configurazione websocket
 var webSocketOptions = new WebSocketOptions
@@ -122,8 +139,6 @@ app.MapCustomersEndPoints();
 app.MapOrdersEndPoints();
 app.MapTestEndpoints();
 
-// Web sockets endpoints
-
-app.MapWSStatusEndPoints();
+app.MapHub<ProductionHub>("/productionHub");
 
 app.Run();

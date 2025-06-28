@@ -1,4 +1,5 @@
 ﻿using Confluent.Kafka;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MokaMetrics.DataAccess.Abstractions;
@@ -8,6 +9,7 @@ using MokaMetrics.Kafka.MessageParsers.Base;
 using MokaMetrics.Models.Helpers;
 using MokaMetrics.Models.Influx;
 using MokaMetrics.Models.Kafka.Messages;
+using MokaMetrics.SignalR.Hubs;
 using System.Reflection;
 using System.Text.Json;
 
@@ -20,19 +22,22 @@ public class TopicProcessor
     private readonly IInfluxDb3Service _influx;
     private readonly MessageParserFactory _messageParserFactory;
     private readonly IServiceScopeFactory _serviceScopeFactory;
+    private readonly IHubContext<ProductionHub> _hubContext;
 
     public TopicProcessor(
         ILogger<TopicProcessor> logger,
         IKafkaProducer kafkaProducer,
         IInfluxDb3Service influx,
         MessageParserFactory messageParserFactory,
-        IServiceScopeFactory scopeFactory)
+        IServiceScopeFactory scopeFactory,
+        IHubContext<ProductionHub> hubContext)
     {
         _logger = logger;
         _kafkaProducer = kafkaProducer;
         _influx = influx;
         _messageParserFactory = messageParserFactory;
         _serviceScopeFactory = scopeFactory;
+        _hubContext = hubContext;
     }
 
     public async Task ProcessMessageAsync(string topic, string message)
@@ -125,9 +130,7 @@ public class TopicProcessor
         _logger.LogInformation("Processing LotCompletion Message...");
 
         using var scope = _serviceScopeFactory.CreateScope();
-
         var _uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
-
         var lot = await _uow.Lots.GetByCodeAsync(message.LotCode);
 
         if (lot == null)
@@ -136,22 +139,38 @@ public class TopicProcessor
             return;
         }
 
-        lot.UpdatedAt = DateTime.UtcNow;
+        var now = DateTime.UtcNow;
+        lot.UpdatedAt = now;
         lot.ManufacturedQuantity = message.LotProducedQuantity;
 
         if (lot.ManufacturedQuantity == lot.TotalQuantity)
         {
+            lot.EndDate = now;
             var order = await _uow.Orders.GetOrderWithLotsAsync(lot.OrderId);
             if (order.Lots.Where(l => l.Id != lot.Id).All(x => x.ManufacturedQuantity == x.TotalQuantity))
             {
-                order.FullfilledDate = DateTime.UtcNow;
+                order.FullfilledDate = now;
+                order.UpdatedAt = now;
+                _uow.Orders.Update(order);
+
+                await _hubContext.Clients.All.SendAsync("orderFulfilled", order.Id, order.FullfilledDate);
+
                 _logger.LogInformation("Order {OrderId} is fully fulfilled", order.Id);
             }
         }
 
+        _uow.Lots.Update(lot);
         await _uow.SaveChangesAsync();
 
-        _logger.LogInformation("Finished processing LotCompletion message...");
+        var lotCompletionNotification = new
+        {
+            LotCode = message.LotCode,
+            LotProducedQuantity = message.LotProducedQuantity
+        };
+
+        await _hubContext.Clients.All.SendAsync("lotCompleted", message.LotCode, message.LotProducedQuantity);
+
+        _logger.LogInformation("Finished processing LotCompleted message...");
     }
 
     private async Task ProcessMeasurement(dynamic message)
@@ -239,6 +258,20 @@ public class TopicProcessor
             }
 
             await _influx.WriteDataAsync(statusTsData);
+
+
+            // Notify connected clients via SignalR
+            _logger.LogInformation($"Notifying clients of status");
+
+            var statusMessage = new
+            {
+                Location = location.ToLower(),
+                Machine = machine.ToLower(),
+                Status = error != "None" ? MachineStatuses.Alarm : MachineStatuses.Operational,
+                ErrorMessage = error != "None" ? error : null
+            };
+
+            await _hubContext.Clients.All.SendAsync("status", JsonSerializer.Serialize(statusMessage));
 
             _logger.LogInformation($"Finished processing status for {machine} machine in location {location}");
         }

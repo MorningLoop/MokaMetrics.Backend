@@ -34,6 +34,7 @@
     <ProjectReference Include="..\MokaMetrics.DataAccess\MokaMetrics.DataAccess.csproj" />
     <ProjectReference Include="..\MokaMetrics.Kafka\MokaMetrics.Kafka.csproj" />
     <ProjectReference Include="..\MokaMetrics.Models\MokaMetrics.Models.csproj" />
+    <ProjectReference Include="..\MokaMetrics.SignalR\MokaMetrics.SignalR.csproj" />
   </ItemGroup>
 
 </Project>
