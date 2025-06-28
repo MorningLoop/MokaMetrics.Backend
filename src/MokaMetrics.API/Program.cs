@@ -42,42 +42,24 @@ builder.Services.AddScoped<IMachineActivityStatusRepository, MachineActivityStat
 builder.Services.AddScoped<IMachineRepository, MachineRepository>();
 builder.Services.AddScoped<IOrderRepository, OrderRepository>();
 
-// broker message parsers
-builder.Services.AddMessageParsers();
-
-builder.Services.AddSingleton<TopicProcessor>();
-
-// Kafka
-builder.Services.AddSingleton<IKafkaProducer>(kafka =>
-{
-    return new KafkaProducer(
-        new KafkaSettings()
-        {
-            BootstrapServers = builder.Configuration["Kafka:Host"] ?? "localhost:9092",
-            GroupId = builder.Configuration["Kafka:GroupId"] ?? "mokametrics-backend-producer",
-            Topics = builder.Configuration.GetSection("Kafka:Topics").Get<List<string>>() ?? new List<string>(),
-            Producer = new ProducerSettings
-            {
-                RetryCount = int.Parse(builder.Configuration["Kafka:Producer:RetryCount"] ?? "3"),
-                TimeoutMs = int.Parse(builder.Configuration["Kafka:Producer:TimeoutMs"] ?? "30000"),
-                Acks = builder.Configuration["Kafka:Producer:Acks"] ?? "all"
-            },
-            Consumer = new ConsumerSettings
-            {
-                AutoOffsetReset = builder.Configuration["Kafka:Consumer:AutoOffsetReset"] ?? "earliest",
-                EnableAutoCommit = bool.Parse(builder.Configuration["Kafka:Consumer:EnableAutoCommit"] ?? "false"),
-                SessionTimeoutMs = int.Parse(builder.Configuration["Kafka:Consumer:SessionTimeoutMs"] ?? "30000")
-            }
-        },
-        kafka.GetRequiredService<Microsoft.Extensions.Logging.ILogger<KafkaProducer>>()
-    );
-});
-
 // Ignores cycles in JSON serialization
 builder.Services.Configure<JsonOptions>(options =>
     options.SerializerOptions.ReferenceHandler =
         System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles);
 
+
+// broker message parsers
+builder.Services.AddMessageParsers();
+builder.Services.AddSingleton<TopicProcessor>();
+
+// Kafka producer
+builder.Services.AddSingleton<IKafkaProducer>(kafka =>
+{
+    return new KafkaProducer(
+        new ConfigUtils(builder.Configuration).GetKafkaProducerSettings(),
+        kafka.GetRequiredService<Microsoft.Extensions.Logging.ILogger<KafkaProducer>>()
+    );
+});
 
 // InfluxDb
 builder.Services.AddInfluxDb3(builder.Configuration);
@@ -94,27 +76,21 @@ builder.Services.AddTransient<TopicProcessor>(processor =>
         processor.GetRequiredService<IServiceScopeFactory>()
     );
 });
+
+// ==== APP BUILD ====
 var app = builder.Build();
 
 var serviceProvider = app.Services;
 var hostApplicationLifetime = serviceProvider.GetRequiredService<IHostApplicationLifetime>();
 
-// Kafka consumer
+// Kafka backend (iot) consumer
 var backgroundService = new KafkaConsumerService(
-    new KafkaSettings()
-    {
-        BootstrapServers = builder.Configuration["Kafka:Consumer:Host"] ?? "localhost:9092",
-        GroupId = builder.Configuration["Kafka:Consumer:GroupId"] ?? "mokametrics-backend-consumer",
-        Topics = builder.Configuration.GetSection("Kafka:Topics").Get<List<string>>() ?? new List<string>(),
-        Consumer = new ConsumerSettings
-        {
-            AutoOffsetReset = builder.Configuration["Kafka:Consumer:AutoOffsetReset"] ?? "earliest",
-            EnableAutoCommit = bool.Parse(builder.Configuration["Kafka:Consumer:EnableAutoCommit"] ?? "false"),
-            SessionTimeoutMs = int.Parse(builder.Configuration["Kafka:Consumer:SessionTimeoutMs"] ?? "30000")
-        }
-    },
     serviceProvider.GetRequiredService<ILogger<KafkaConsumerService>>(),
-    serviceProvider.GetRequiredService<TopicProcessor>()
+    new KafkaConsumer(
+        new ConfigUtils(builder.Configuration).GetKafkaConsumerSettings(KafkaConsumerSettingsType.Backend),
+        serviceProvider.GetRequiredService<ILogger<KafkaConsumer>>(),
+        serviceProvider.GetRequiredService<TopicProcessor>()
+    )
 );
 
 _ = Task.Run(async () =>
@@ -155,8 +131,10 @@ app.UseWebSockets(webSocketOptions);
 // add endpoint extension methods
 app.MapCustomersEndPoints();
 app.MapOrdersEndPoints();
-//wss\
-//app.MapWSStatusEndPoints();
-app.MapInfluxTestEndpoints();
+app.MapTestEndpoints();
+
+// Web sockets endpoints
+
+app.MapWSStatusEndPoints();
 
 app.Run();
