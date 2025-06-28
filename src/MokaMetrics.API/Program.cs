@@ -1,8 +1,5 @@
 using Microsoft.AspNetCore.Http.Json;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using MokaMetrics.API.Endpoints;
 using MokaMetrics.API.Extensions;
 using MokaMetrics.API.HealthChecks;
@@ -15,9 +12,7 @@ using MokaMetrics.DataAccess.Contexts;
 using MokaMetrics.DataAccess.Repositories;
 using MokaMetrics.Kafka;
 using MokaMetrics.Kafka.Abstractions;
-using MokaMetrics.Kafka.Configuration;
 using MokaMetrics.Kafka.Consumer;
-using MokaMetrics.Kafka.MessageParsers;
 using MokaMetrics.Kafka.MessageParsers.Base;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -34,13 +29,7 @@ builder.Services.AddDbContext<IApplicationDbContext, ApplicationDbContext>(optio
 });
 
 // DataAccess
-builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
-builder.Services.AddScoped<ICustomerRepository, CustomerRepository>();
-builder.Services.AddScoped<IIndustrialFacilityRepository, IndustrialFacilityRepository>();
-builder.Services.AddScoped<ILotRepository, LotRepository>();
-builder.Services.AddScoped<IMachineActivityStatusRepository, MachineActivityStatusRepository>();
-builder.Services.AddScoped<IMachineRepository, MachineRepository>();
-builder.Services.AddScoped<IOrderRepository, OrderRepository>();
+builder.Services.AddUnitOfWork();
 
 // Ignores cycles in JSON serialization
 builder.Services.Configure<JsonOptions>(options =>
