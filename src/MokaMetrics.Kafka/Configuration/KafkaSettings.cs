@@ -2,7 +2,7 @@
 
 public class KafkaSettings
 {
-    public string BootstrapServers { get; set; }
+    public string Host { get; set; }
     public string GroupId { get; set; } = "mokametrics-backend";
     public List<string> Topics { get; set; } = new();
     public ProducerSettings Producer { get; set; } = new();

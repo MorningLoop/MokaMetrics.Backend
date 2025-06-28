@@ -2,22 +2,21 @@ using Confluent.Kafka;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using MokaMetrics.Kafka.Abstractions;
 using MokaMetrics.Kafka.Configuration;
+using static Confluent.Kafka.ConfigPropertyNames;
 
 namespace MokaMetrics.Kafka.Consumer;
 
 public class KafkaConsumerService : BackgroundService
 {
-    private IConsumer<string, string>? _consumer;
-    private readonly KafkaSettings _settings;
     private readonly ILogger<KafkaConsumerService> _logger;
-    private readonly TopicProcessor _topicProcessor;
+    private readonly IKafkaConsumer _consumer;
 
-    public KafkaConsumerService(KafkaSettings settings, ILogger<KafkaConsumerService> logger, TopicProcessor topicProcessor)
+    public KafkaConsumerService(ILogger<KafkaConsumerService> logger, IKafkaConsumer consumer)
     {
-        _settings = settings;
         _logger = logger;
-        _topicProcessor = topicProcessor;
+        _consumer = consumer;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -26,34 +25,15 @@ public class KafkaConsumerService : BackgroundService
         
         try
         {
-            InitializeConsumer();
-
-            if (!_settings.Topics.Any())
-            {
-                _logger.LogWarning("No topics configured for consumption");
-                return;
-            }
-
-            _consumer!.Subscribe(_settings.Topics);
-            _logger.LogInformation("Kafka consumer started for topics: {Topics}",
-                string.Join(", ", _settings.Topics));
+            // starting consumer
+            _consumer.InitializeConsumer();
+            _consumer.SubscribeToTopics();
 
             while (!stoppingToken.IsCancellationRequested)
             {
                 try
                 {
-                    var consumeResult = _consumer.Consume(stoppingToken);
-
-                    if (consumeResult?.Message != null)
-                    {
-                        await ProcessMessageAsync(consumeResult);
-
-                        // Manual commit after successful processing
-                        if (!_settings.Consumer.EnableAutoCommit)
-                        {
-                            _consumer.Commit(consumeResult);
-                        }
-                    }
+                    await _consumer.ConsumeMessageAsync(stoppingToken);
                 }
                 catch (ConsumeException ex)
                 {
@@ -80,63 +60,6 @@ public class KafkaConsumerService : BackgroundService
             _logger.LogInformation("Kafka consumer stopped");
         }
     }
-    
-    private void InitializeConsumer()
-    {
-        var config = new ConsumerConfig
-        {
-            BootstrapServers = _settings.BootstrapServers,
-            GroupId = _settings.GroupId,
-            AutoOffsetReset = Enum.Parse<AutoOffsetReset>(_settings.Consumer.AutoOffsetReset, true),
-            EnableAutoCommit = _settings.Consumer.EnableAutoCommit,
-            SessionTimeoutMs = _settings.Consumer.SessionTimeoutMs,
-            EnablePartitionEof = false
-        };
-
-        _consumer = new ConsumerBuilder<string, string>(config)
-            .SetErrorHandler((_, e) => _logger.LogError("Kafka Consumer Error: {Error}", e.Reason))
-            .SetPartitionsAssignedHandler((c, partitions) =>
-            {
-                _logger.LogInformation("Assigned partitions: [{Partitions}]",
-                    string.Join(", ", partitions.Select(p => $"{p.Topic}:{p.Partition}")));
-            })
-            .SetPartitionsRevokedHandler((c, partitions) =>
-            {
-                _logger.LogInformation("Revoked partitions: [{Partitions}]",
-                    string.Join(", ", partitions.Select(p => $"{p.Topic}:{p.Partition}")));
-            })
-            .Build();
-    }
-
-    private async Task ProcessMessageAsync(ConsumeResult<string, string> consumeResult)
-    {
-        var message = consumeResult.Message;
-
-        _logger.LogInformation(
-            "Consumed message from {Topic}:{Partition}:{Offset} - Key: {Key}, Value: {Value}",
-            consumeResult.Topic, consumeResult.Partition.Value, consumeResult.Offset.Value,
-            message.Key, message.Value);
-
-        // Process the message based on topic
-        try
-        {
-            await ProcessByTopic(consumeResult.Topic, message.Key, message.Value);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error processing message from topic {Topic}", consumeResult.Topic);
-
-            // Here you could implement dead letter queue logic
-            // or other error handling strategies
-            throw; // Re-throw to prevent commit if auto-commit is disabled
-        }
-    }
-
-    private async Task ProcessByTopic(string topic, string key, string value)
-    {
-        await _topicProcessor.ProcessMessageAsync(topic, value);
-    } 
-
     public override void Dispose()
     {
         _consumer?.Dispose();

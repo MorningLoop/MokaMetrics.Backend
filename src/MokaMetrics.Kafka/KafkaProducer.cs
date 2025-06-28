@@ -21,7 +21,7 @@ namespace MokaMetrics.Kafka
 
             var config = new ProducerConfig
             {
-                BootstrapServers = _settings.BootstrapServers,
+                BootstrapServers = _settings.Host,
                 Acks = Enum.Parse<Acks>(_settings.Producer.Acks, true),
                 MessageTimeoutMs = _settings.Producer.TimeoutMs,
                 EnableIdempotence = true,
