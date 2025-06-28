@@ -7,13 +7,13 @@ namespace MokaMetrics.API.Endpoints;
 
 public static class TestEndpoints
 {
-    public static IEndpointRouteBuilder MapInfluxTestEndpoints(this IEndpointRouteBuilder builder)
+    public static IEndpointRouteBuilder MapTestEndpoints(this IEndpointRouteBuilder builder)
     {
-        var group = builder.MapGroup("/api/iot")
+        var group = builder.MapGroup("/api/test")
             .WithTags("Time Series Data (InfluxDB 3.0)");
 
         // Write single data point
-        group.MapPost("/", async (TimeSeriesData data, IInfluxDb3Service influxDb) =>
+        group.MapPost("/iot", async (TimeSeriesData data, IInfluxDb3Service influxDb) =>
         {
             await influxDb.WriteDataAsync(data);
             return Results.Ok(new { message = "Data written successfully" });
@@ -22,7 +22,7 @@ public static class TestEndpoints
         .WithSummary("Write a single time series data point to InfluxDB 3.0");
 
         // Write multiple data points
-        group.MapPost("/batch", async (IEnumerable<TimeSeriesData> data, IInfluxDb3Service influxDb) =>
+        group.MapPost("/iot/batch", async (IEnumerable<TimeSeriesData> data, IInfluxDb3Service influxDb) =>
         {
             await influxDb.WriteDataAsync(data);
             return Results.Ok(new { message = $"{data.Count()} data points written successfully" });
@@ -31,7 +31,7 @@ public static class TestEndpoints
         .WithSummary("Write multiple time series data points to InfluxDB 3.0");
 
         // Query data with structured request
-        group.MapPost("/query", async (QueryRequest request, IInfluxDb3Service influxDb) =>
+        group.MapPost("/iot/query", async (QueryRequest request, IInfluxDb3Service influxDb) =>
         {
             var results = await influxDb.QueryDataAsync(request);
             return Results.Ok(results);
@@ -40,7 +40,7 @@ public static class TestEndpoints
         .WithSummary("Query time series data using structured request");
 
         // Health check
-        group.MapGet("/health", async (IInfluxDb3Service influxDb) =>
+        group.MapGet("/iot/health", async (IInfluxDb3Service influxDb) =>
         {
             Console.WriteLine("entered /health endpoint");
             var isHealthy = await influxDb.HealthCheckAsync();
@@ -50,7 +50,7 @@ public static class TestEndpoints
         .WithSummary("Check InfluxDB 3.0 health");
 
         // Get latest data for a measurement
-        group.MapGet("/latest/{measurement}", async (string measurement, IInfluxDb3Service influxDb, int limit = 10) =>
+        group.MapGet("/iot/latest/{measurement}", async (string measurement, IInfluxDb3Service influxDb, int limit = 10) =>
         {
             var request = new QueryRequest
             {
