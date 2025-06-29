@@ -2,7 +2,7 @@
 
 ## Architecture
 
-![mokametrics architecture](https://imgur.com/a/QbP8A3H)
+![mokametrics architecture](https://i.imgur.com/DM8wT2j.png)
 
 ## Migrations
 ```bash
