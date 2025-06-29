@@ -6,6 +6,7 @@ using MokaMetrics.DataAccess.Abstractions;
 using MokaMetrics.DataAccess.Abstractions.Influx;
 using MokaMetrics.Kafka.Abstractions;
 using MokaMetrics.Kafka.MessageParsers.Base;
+using MokaMetrics.Models.Entities;
 using MokaMetrics.Models.Helpers;
 using MokaMetrics.Models.Influx;
 using MokaMetrics.Models.Kafka.Messages;
@@ -153,7 +154,7 @@ public class TopicProcessor
                 order.UpdatedAt = now;
                 _uow.Orders.Update(order);
 
-                await _hubContext.Clients.All.SendAsync("orderFulfilled", order.Id, order.FullfilledDate);
+                await SendOrderCompleteNotification(order);
 
                 _logger.LogInformation("Order {OrderId} is fully fulfilled", order.Id);
             }
@@ -162,14 +163,8 @@ public class TopicProcessor
         _uow.Lots.Update(lot);
         await _uow.SaveChangesAsync();
 
-        var lotCompletionNotification = new
-        {
-            LotCode = message.LotCode,
-            LotProducedQuantity = message.LotProducedQuantity
-        };
-
-        await _hubContext.Clients.All.SendAsync("lotCompleted", message.LotCode, message.LotProducedQuantity);
-
+        await SendLotCompletionNotification(message);
+        
         _logger.LogInformation("Finished processing LotCompleted message...");
     }
 
@@ -259,20 +254,8 @@ public class TopicProcessor
 
             await _influx.WriteDataAsync(statusTsData);
 
-
-            // Notify connected clients via SignalR
-            _logger.LogInformation($"Notifying clients of status");
-
-            var statusMessage = new
-            {
-                Location = location.ToLower(),
-                Machine = machine.ToLower(),
-                Status = error != "None" ? MachineStatuses.Alarm : MachineStatuses.Operational,
-                ErrorMessage = error != "None" ? error : null
-            };
-
-            await _hubContext.Clients.All.SendAsync("status", JsonSerializer.Serialize(statusMessage));
-
+            await SendStatusNotification(location, machine, error);
+           
             _logger.LogInformation($"Finished processing status for {machine} machine in location {location}");
         }
         catch (Exception ex)
@@ -280,5 +263,45 @@ public class TopicProcessor
             _logger.LogError(ex, $"Error processing status for {machine} machine in location {location}");
             throw;
         }
+    }
+
+    private async Task SendLotCompletionNotification(LotCompletionMessage message)
+    {
+        _logger.LogInformation($"Notifying clients of lot completion progress");
+        var args = new
+        {
+            LotCode = message.LotCode,
+            LotProducedQuantity = message.LotProducedQuantity
+        };
+
+        await _hubContext.Clients.All.SendAsync("lotCompleted", JsonSerializer.Serialize(args));
+    }
+
+    private async Task SendStatusNotification(string location, string machine, string error)
+    {
+        _logger.LogInformation($"Notifying clients of status");
+
+        var statusMessage = new
+        {
+            Location = location.ToLower(),
+            Machine = machine.ToLower(),
+            Status = error != "None" ? MachineStatuses.Alarm : MachineStatuses.Operational,
+            ErrorMessage = error != "None" ? error : null
+        };
+
+        await _hubContext.Clients.All.SendAsync("status", JsonSerializer.Serialize(statusMessage));
+    }
+
+    private async Task SendOrderCompleteNotification(Order order)
+    {
+        _logger.LogInformation($"Notifying clients of order completed ID: {order.Id}");
+
+        var args = new
+        {
+            orderId = order.Id,
+            fullfilledDate = order.FullfilledDate,
+        };
+
+        await _hubContext.Clients.All.SendAsync("orderFulfilled", JsonSerializer.Serialize(args));
     }
 }
