@@ -230,6 +230,8 @@ public class TopicProcessor
     private async Task ProcessStatus(string location, string machine, string error)
     {
         _logger.LogInformation($"Processing status for {machine} machine in location {location}");
+        var status = error != "None" ? MachineStatuses.Alarm : MachineStatuses.Operational;
+        
         try
         {
             var statusTsData = new TimeSeriesData
@@ -237,7 +239,7 @@ public class TopicProcessor
                 Measurement = "status",
                 Fields = new Dictionary<string, object>
                 {
-                    { "value", error != "None" ? MachineStatuses.Alarm : MachineStatuses.Operational  }
+                    { "value", status.ToString() }
                 },
                 Tags = new Dictionary<string, string>
                 {
@@ -247,7 +249,7 @@ public class TopicProcessor
                 Timestamp = DateTime.UtcNow
             };
 
-            if (error != "None")
+            if (status == MachineStatuses.Alarm)
             {
                 statusTsData.Fields.Add("error_message", error);
             }
@@ -255,7 +257,24 @@ public class TopicProcessor
             await _influx.WriteDataAsync(statusTsData);
 
             await SendStatusNotification(location, machine, error);
-           
+
+            // update machine status in postgres
+            using var scope = _serviceScopeFactory.CreateScope();
+            var _uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+
+            var machineRecord = await _uow.Machines.GetByCodeAsync(machine);
+            if (machineRecord == null)
+            {
+                _logger.LogWarning($"Machine with code {machine} not found in database");
+                return;
+            }
+
+            machineRecord.Status = (int)status;
+            machineRecord.UpdatedAt = DateTime.UtcNow;
+
+            _uow.Machines.Update(machineRecord);
+            await _uow.SaveChangesAsync();
+
             _logger.LogInformation($"Finished processing status for {machine} machine in location {location}");
         }
         catch (Exception ex)
