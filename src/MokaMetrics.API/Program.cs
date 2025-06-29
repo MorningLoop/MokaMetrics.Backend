@@ -37,7 +37,6 @@ builder.Services.Configure<JsonOptions>(options =>
 
 // broker message parsers
 builder.Services.AddMessageParsers();
-builder.Services.AddSingleton<TopicProcessor>();
 
 // Kafka producer
 builder.Services.AddSingleton<IKafkaProducer>(kafka =>
