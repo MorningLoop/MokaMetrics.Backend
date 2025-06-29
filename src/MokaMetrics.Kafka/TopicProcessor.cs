@@ -62,19 +62,19 @@ public class TopicProcessor
             {
                 case CncMessage cncMessage:
                     await ProcessCncMessageAsync(cncMessage);
-                    await ProcessStatus(cncMessage.Site, "cnc", cncMessage.Error);
+                    await ProcessStatus(cncMessage.Site, cncMessage.MachineId, cncMessage.Error);
                     break;
                 case LatheMessage latheMessage:
                     await ProcessLatheMessageAsync(latheMessage);
-                    await ProcessStatus(latheMessage.Site, "lathe", latheMessage.Error);
+                    await ProcessStatus(latheMessage.Site, latheMessage.MachineId, latheMessage.Error);
                     break;
                 case AssemblyMessage assemblyMessage:
                     await ProcessAssemblyMessageAsync(assemblyMessage);
-                    await ProcessStatus(assemblyMessage.Site, "assembly", assemblyMessage.Error);
+                    await ProcessStatus(assemblyMessage.Site, assemblyMessage.MachineId, assemblyMessage.Error);
                     break;
                 case TestingMessage testingMessage:
                     await ProcessTestingMessageAsync(testingMessage);
-                    await ProcessStatus(testingMessage.Site, "testing", testingMessage.Error);
+                    await ProcessStatus(testingMessage.Site, testingMessage.MachineId, testingMessage.Error);
                     break;
                 case LotCompletionMessage lotCompletionMessage:
                     await ProcessLotCompletionMessageAsync(lotCompletionMessage);
