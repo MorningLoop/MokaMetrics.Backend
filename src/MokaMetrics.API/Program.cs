@@ -126,6 +126,7 @@ if (app.Environment.IsProduction())
 // add endpoint extension methods
 app.MapCustomersEndPoints();
 app.MapOrdersEndPoints();
+app.MapIndustrialFacilityEndpoints();
 app.MapTestEndpoints();
 
 app.MapHub<ProductionHub>("/productionHub");
