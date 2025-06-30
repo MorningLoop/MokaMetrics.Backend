@@ -52,7 +52,7 @@ public static class OrdersEndpoint
         {
             var ifName = industrialFacilities.FirstOrDefault(ifac => ifac.Id == lot.IndustrialFacilityId).Country.ToLower();
             // assign lot code
-            lot.LotCode = $"LOT-{ifName}-{order.OrderDate.ToString("yyyyMMdd")}-{new Guid().ToString("N").Substring(0, 8)}";
+            lot.LotCode = $"LOT-{ifName}-{order.OrderDate.ToString("yyyyMMdd")}-{Guid.NewGuid().ToString("N").Substring(0, 8)}";
         }
 
         _uow.Orders.Add(order);
