@@ -45,12 +45,14 @@ public static class OrdersEndpoint
     }
     private static async Task<Created> CreateOrderAsync(IUnitOfWork _uow, IKafkaProducer _kafkaProducer, [FromBody] OrderWithLotsCreateDto orderDto)
     {
+        var industrialFacilities = await _uow.IndustrialFacilities.GetAllAsync();
         var order = OrderMapper.MapCreateOrder(orderDto);
 
         foreach (var lot in order.Lots)
         {
-            // Ensure lotcode is unique
-            lot.LotCode += $"-{Guid.NewGuid().ToString("N").Substring(0, 8)}"; 
+            var ifName = industrialFacilities.FirstOrDefault(ifac => ifac.Id == lot.IndustrialFacilityId).Country.ToLower();
+            // assign lot code
+            lot.LotCode = $"LOT-{ifName}-{order.OrderDate.ToString("yyyyMMdd")}-{new Guid().ToString("N").Substring(0, 8)}";
         }
 
         _uow.Orders.Add(order);
