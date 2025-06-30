@@ -31,7 +31,7 @@ namespace MokaMetrics.API.Endpoints
             IEnumerable<Customer> customers = await _uow.Customers.GetAllAsync();
             return TypedResults.Ok(customers ?? Array.Empty<Customer>());
         }
-        
+
         private static async Task<Results<Ok<Customer>, NotFound>> GetCustomerByIdAsync(IUnitOfWork _uow, int id)
         {
             var customer = await _uow.Customers.GetByIdAsync(id);
@@ -41,7 +41,7 @@ namespace MokaMetrics.API.Endpoints
             }
             return TypedResults.Ok(customer);
         }
-        
+
         private static async Task<Created<Customer>> CreateCustomerAsync(IUnitOfWork _uow, CustomerCreateDto customerDto)
         {
             var customer = CustomerMapper.MapCreateCustomer(customerDto);
@@ -49,7 +49,7 @@ namespace MokaMetrics.API.Endpoints
             await _uow.SaveChangesAsync();
             return TypedResults.Created($"/api/customers/{customer.Id}", customer);
         }
-        
+
         private static async Task<Results<Ok, NotFound>> UpdateCustomerAsync(IUnitOfWork _uow, int id, CustomerDtoStrict customerDto)
         {
             var existingCustomer = await _uow.Customers.GetByIdAsync(id);
@@ -74,14 +74,20 @@ namespace MokaMetrics.API.Endpoints
 
             return TypedResults.Ok();
         }
-        
-        private static async Task<Results<NoContent, NotFound>> DeleteCustomerAsync(IUnitOfWork _uow, int id)
+
+        private static async Task<Results<NoContent, NotFound, BadRequest<string>>> DeleteCustomerAsync(IUnitOfWork _uow, int id)
         {
-            var customer = await _uow.Customers.GetByIdAsync(id);
+            var customer = await _uow.Customers.GetCustomerWithOrdersAsync(id);
             if (customer == null)
             {
                 return TypedResults.NotFound();
             }
+
+            if (customer.Orders.Any())
+            {
+                return TypedResults.BadRequest("Cannot delete customer with existing orders.");
+            }
+
 
             _uow.Customers.Delete(customer);
             await _uow.SaveChangesAsync();
