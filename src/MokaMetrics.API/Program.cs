@@ -70,9 +70,8 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReactApp", policy =>
     {
-        string[] origins = new string[] {
-            builder.Configuration["Cors:AllowedOrigin"],
-        };
+        string[] origins = builder.Configuration["Cors:AllowedOrigin"].Split("|").ToArray<string>();
+
         policy.WithOrigins(origins)
             .AllowAnyHeader()
             .AllowAnyMethod()
