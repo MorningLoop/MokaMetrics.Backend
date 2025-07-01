@@ -64,7 +64,6 @@ builder.Services.AddTransient<TopicProcessor>(processor =>
     );
 });
 
-builder.Services.AddSignalR();
 
 builder.Services.AddCors(options =>
 {
@@ -79,6 +78,7 @@ builder.Services.AddCors(options =>
     });
 });
 
+builder.Services.AddSignalR();
 // ==== APP BUILD ====
 var app = builder.Build();
 
