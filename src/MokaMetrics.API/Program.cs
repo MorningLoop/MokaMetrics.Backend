@@ -115,8 +115,9 @@ if (app.Environment.IsDevelopment())
     //app.UseSwagger();
     //app.UseSwaggerUI();
     //app.MapOpenApi();
-    app.UseCors("AllowReactApp");
 }
+
+app.UseCors("AllowReactApp");
 
 if (app.Environment.IsProduction())
     app.UseHttpsRedirection();
